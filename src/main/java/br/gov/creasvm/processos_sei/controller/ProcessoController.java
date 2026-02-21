@@ -31,7 +31,7 @@ public class ProcessoController {
             description = "Retorna uma lista de todos os processos cadastrados")
     @ApiResponse(responseCode = "200", description = "Lista de processos retornada com sucesso")
     @GetMapping
-    public ResponseEntity<List<ProcessoDTO>> listarTodos() {;
+    public ResponseEntity<List<ProcessoDTO>> listarTodos() {
         return ResponseEntity.ok(processoService.listarTodos());
     }
 
