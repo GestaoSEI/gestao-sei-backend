@@ -3,16 +3,21 @@ package br.gov.creasvm.processos_sei.controller;
 import br.gov.creasvm.processos_sei.dto.ProcessoDTO;
 import br.gov.creasvm.processos_sei.dto.ProcessoFiltroDTO;
 import br.gov.creasvm.processos_sei.service.ProcessoService;
+import br.gov.creasvm.processos_sei.service.RelatorioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import net.sf.jasperreports.engine.JRException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 
 @Tag(name = "Processos", description = "API para gerenciamento de processos SEI")
@@ -21,10 +26,12 @@ import java.util.List;
 public class ProcessoController {
 
     private final ProcessoService processoService;
+    private final RelatorioService relatorioService;
 
     @Autowired
-    public ProcessoController(ProcessoService processoService) {
+    public ProcessoController(ProcessoService processoService, RelatorioService relatorioService) {
         this.processoService = processoService;
+        this.relatorioService = relatorioService;
     }
 
     @Operation(summary = "Listar todos os processos",
@@ -116,5 +123,42 @@ public class ProcessoController {
     public ResponseEntity<List<ProcessoDTO>> buscarPorPalavraChave(
             @Parameter(description = "Palavra-chave para busca") @RequestParam String keyword) {
         return ResponseEntity.ok(processoService.buscarPorPalavraChave(keyword));
+    }
+
+    @Operation(summary = "Gerar relatório PDF",
+            description = "Gera um relatório PDF com base nos filtros ou palavra-chave fornecidos")
+    @GetMapping("/relatorio")
+    public ResponseEntity<byte[]> gerarRelatorio(
+            @Parameter(description = "Status do processo") @RequestParam(required = false) String status,
+            @Parameter(description = "Unidade atual do processo") @RequestParam(required = false) String unidade,
+            @Parameter(description = "Apenas processos com prazo expirado") @RequestParam(required = false) Boolean prazoExpirado,
+            @Parameter(description = "Palavra-chave para busca") @RequestParam(required = false) String keyword) {
+
+        try {
+            List<ProcessoDTO> processos;
+
+            if (keyword != null && !keyword.isEmpty()) {
+                processos = processoService.buscarPorPalavraChave(keyword);
+            } else {
+                ProcessoFiltroDTO filtro = new ProcessoFiltroDTO();
+                filtro.setStatus(status);
+                filtro.setUnidadeAtual(unidade);
+                filtro.setPrazoExpirado(prazoExpirado);
+                processos = processoService.filtrar(filtro);
+            }
+
+            byte[] pdfBytes = relatorioService.gerarRelatorioProcessos(processos);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("inline", "relatorio_processos.pdf");
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+
+        } catch (JRException | FileNotFoundException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
