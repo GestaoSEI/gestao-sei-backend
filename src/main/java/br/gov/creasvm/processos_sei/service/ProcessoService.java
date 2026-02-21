@@ -12,6 +12,7 @@ public interface ProcessoService {
     ProcessoDTO salvar(ProcessoDTO processoDTO);
     ProcessoDTO atualizar(Long id, ProcessoDTO processoDTO);
     List<ProcessoDTO> filtrar(ProcessoFiltroDTO filtro);
+    List<ProcessoDTO> buscarPorPalavraChave(String keyword);
 
-void deletar(Long id);
+    void deletar(Long id);
 }

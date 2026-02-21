@@ -53,6 +53,17 @@ public class ProcessoServiceImpl implements ProcessoService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ProcessoDTO> buscarPorPalavraChave(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return listarTodos();
+        }
+        return processoRepository.searchByKeyword(keyword).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ProcessoDTO> listarTodos() {
         return processoRepository.findAll().stream()
                 .map(this::toDTO)

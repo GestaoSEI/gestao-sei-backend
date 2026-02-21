@@ -109,4 +109,12 @@ public class ProcessoController {
 
         return ResponseEntity.ok(processoService.filtrar(filtro));
     }
+
+    @Operation(summary = "Buscar processos por palavra-chave",
+            description = "Busca processos que contenham a palavra-chave em qualquer campo (número, tipo, origem, unidade, status)")
+    @GetMapping("/busca")
+    public ResponseEntity<List<ProcessoDTO>> buscarPorPalavraChave(
+            @Parameter(description = "Palavra-chave para busca") @RequestParam String keyword) {
+        return ResponseEntity.ok(processoService.buscarPorPalavraChave(keyword));
+    }
 }
