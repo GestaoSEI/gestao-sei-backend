@@ -1,22 +1,38 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: processos-db
-    environment:
-      POSTGRES_DB: processos_sei
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+  app:
+    build: .
+    container_name: processos-sei-app
     ports:
-      - "5432:5432"
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/processos_sei
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - db
+    networks:
+      - processos-sei-network
+
+  db:
+    image: postgres:16
+    container_name: processos-sei-db
+    environment:
+      - POSTGRES_DB=processos_sei
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - processos-sei-network
 
 volumes:
-  postgres_data:
+  postgres-data:
+
+networks:
+  processos-sei-network:
+    driver: bridge
