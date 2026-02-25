@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.FileNotFoundException;
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Processos", description = "API para gerenciamento de processos SEI")
@@ -102,17 +103,21 @@ public class ProcessoController {
     }
 
     @Operation(summary = "Filtrar processos",
-            description = "Filtra processos por status, unidade e/ou prazo expirado")
+            description = "Filtra processos por status, unidade, prazo expirado e/ou intervalo de datas")
     @GetMapping("/filtro")
     public ResponseEntity<List<ProcessoDTO>> filtrar(
             @Parameter(description = "Status do processo") @RequestParam(required = false) String status,
             @Parameter(description = "Unidade atual do processo") @RequestParam(required = false) String unidade,
-            @Parameter(description = "Apenas processos com prazo expirado") @RequestParam(required = false) Boolean prazoExpirado) {
+            @Parameter(description = "Apenas processos com prazo expirado") @RequestParam(required = false) Boolean prazoExpirado,
+            @Parameter(description = "Data inicial do prazo final") @RequestParam(required = false) LocalDate dataInicio,
+            @Parameter(description = "Data final do prazo final") @RequestParam(required = false) LocalDate dataFim) {
 
         ProcessoFiltroDTO filtro = new ProcessoFiltroDTO();
         filtro.setStatus(status);
         filtro.setUnidadeAtual(unidade);
         filtro.setPrazoExpirado(prazoExpirado);
+        filtro.setDataInicio(dataInicio);
+        filtro.setDataFim(dataFim);
 
         return ResponseEntity.ok(processoService.filtrar(filtro));
     }
@@ -132,6 +137,8 @@ public class ProcessoController {
             @Parameter(description = "Status do processo") @RequestParam(required = false) String status,
             @Parameter(description = "Unidade atual do processo") @RequestParam(required = false) String unidade,
             @Parameter(description = "Apenas processos com prazo expirado") @RequestParam(required = false) Boolean prazoExpirado,
+            @Parameter(description = "Data inicial do prazo final") @RequestParam(required = false) LocalDate dataInicio,
+            @Parameter(description = "Data final do prazo final") @RequestParam(required = false) LocalDate dataFim,
             @Parameter(description = "Palavra-chave para busca") @RequestParam(required = false) String keyword) {
 
         try {
@@ -144,6 +151,8 @@ public class ProcessoController {
                 filtro.setStatus(status);
                 filtro.setUnidadeAtual(unidade);
                 filtro.setPrazoExpirado(prazoExpirado);
+                filtro.setDataInicio(dataInicio);
+                filtro.setDataFim(dataFim);
                 processos = processoService.filtrar(filtro);
             }
 

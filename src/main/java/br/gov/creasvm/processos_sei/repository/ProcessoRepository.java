@@ -26,4 +26,12 @@ public interface ProcessoRepository extends JpaRepository<Processo, Long> {
            "LOWER(p.status) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.observacao) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Processo> searchByKeyword(@Param("keyword") String keyword);
+
+    @Query("SELECT p FROM Processo p WHERE " +
+           "(:unidadeAtual IS NULL OR p.unidadeAtual = :unidadeAtual) AND " +
+           "(:dataInicio IS NULL OR p.dataPrazoFinal >= :dataInicio) AND " +
+           "(:dataFim IS NULL OR p.dataPrazoFinal <= :dataFim)")
+    List<Processo> findByUnidadeAndPrazoBetween(@Param("unidadeAtual") String unidadeAtual,
+                                                @Param("dataInicio") LocalDate dataInicio,
+                                                @Param("dataFim") LocalDate dataFim);
 }

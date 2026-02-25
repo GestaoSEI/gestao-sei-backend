@@ -31,7 +31,13 @@ public class ProcessoServiceImpl implements ProcessoService {
         List<Processo> processos;
         LocalDate hoje = LocalDate.now();
 
-        if (filtro.getStatus() != null && filtro.getUnidadeAtual() != null) {
+        if (filtro.getDataInicio() != null || filtro.getDataFim() != null) {
+            processos = processoRepository.findByUnidadeAndPrazoBetween(
+                    filtro.getUnidadeAtual(),
+                    filtro.getDataInicio(),
+                    filtro.getDataFim()
+            );
+        } else if (filtro.getStatus() != null && filtro.getUnidadeAtual() != null) {
             processos = processoRepository.findByStatusAndUnidadeAtual(
                     filtro.getStatus(),
                     filtro.getUnidadeAtual()
