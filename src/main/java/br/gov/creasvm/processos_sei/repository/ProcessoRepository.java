@@ -23,6 +23,7 @@ public interface ProcessoRepository extends JpaRepository<Processo, Long> {
            "LOWER(p.tipoProcesso) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.origem) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.unidadeAtual) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(p.status) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+           "LOWER(p.status) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(p.observacao) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Processo> searchByKeyword(@Param("keyword") String keyword);
 }

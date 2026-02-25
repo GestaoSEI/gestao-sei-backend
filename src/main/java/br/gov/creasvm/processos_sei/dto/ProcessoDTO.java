@@ -35,6 +35,9 @@ public class ProcessoDTO {
     @NotNull(message = "A data de prazo final é obrigatória!")
     private LocalDate dataPrazoFinal;
 
+    @Schema(description = "Observações adicionais sobre o processo", example = "Processo aguardando assinatura do diretor")
+    private String observacao;
+
     //Getters e Setters
     public Long getId() {
         return id;
@@ -90,5 +93,13 @@ public class ProcessoDTO {
 
     public void setDataPrazoFinal(LocalDate dataPrazoFinal) {
         this.dataPrazoFinal = dataPrazoFinal;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
+
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
     }
 }

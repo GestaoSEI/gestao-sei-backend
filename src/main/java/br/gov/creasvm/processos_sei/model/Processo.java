@@ -30,6 +30,9 @@ public class Processo {
     @Column(name = "data_prazo_final")
     private LocalDate dataPrazoFinal;
 
+    @Column(columnDefinition = "TEXT")
+    private String observacao;
+
     public Long getId() {
         return id;
     }
@@ -84,5 +87,13 @@ public class Processo {
 
     public void setDataPrazoFinal(LocalDate dataPrazoFinal) {
         this.dataPrazoFinal = dataPrazoFinal;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
+
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
     }
 }
