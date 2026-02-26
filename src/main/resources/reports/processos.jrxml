@@ -2,8 +2,8 @@
 <!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61d56f459e8176eb05c7705e145cd400ad  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="processos" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="4eedbb89-b4f6-4469-9ab6-f642a1688cf7">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
-	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
-	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
+	<style name="Title" forecolor="#000000" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
+	<style name="SubTitle" forecolor="#000000" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
 	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="10" isBold="true"/>
 	<style name="Detail" mode="Transparent" fontName="Times New Roman" fontSize="10"/>
 	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
@@ -25,9 +25,9 @@
 	<title>
 		<band height="102" splitType="Stretch">
 			<frame>
-				<reportElement mode="Opaque" x="0" y="0" width="802" height="66" backcolor="#000000" uuid="1768276a-637d-43b7-a79e-7e4e6f1074e8"/>
+				<reportElement mode="Transparent" x="0" y="0" width="802" height="66" backcolor="#FFFFFF" uuid="1768276a-637d-43b7-a79e-7e4e6f1074e8"/>
 				<staticText>
-					<reportElement style="Title" x="0" y="0" width="370" height="66" uuid="11ac3f46-a024-4077-8b0f-d70faad0f27d"/>
+					<reportElement style="Title" x="0" y="0" width="370" height="66" forecolor="#000000" uuid="11ac3f46-a024-4077-8b0f-d70faad0f27d"/>
 					<box topPadding="4" leftPadding="4" bottomPadding="4" rightPadding="4"/>
 					<textElement verticalAlignment="Bottom">
 						<font isBold="false"/>
@@ -35,7 +35,7 @@
 					<text><![CDATA[Relatório SEI]]></text>
 				</staticText>
 				<staticText>
-					<reportElement style="SubTitle" x="370" y="37" width="316" height="29" uuid="d3ca5a61-0a5a-4fbe-abda-1199a69411c9"/>
+					<reportElement style="SubTitle" x="370" y="37" width="316" height="29" forecolor="#000000" uuid="d3ca5a61-0a5a-4fbe-abda-1199a69411c9"/>
 					<textElement textAlignment="Right">
 						<font size="22" isBold="false"/>
 					</textElement>
@@ -43,15 +43,21 @@
 				</staticText>
 			</frame>
 			<frame>
-				<reportElement mode="Opaque" x="0" y="70" width="802" height="32" forecolor="#000000" backcolor="#CC0000" uuid="7366c5da-9f57-4203-9be5-2771f0645269"/>
+				<reportElement mode="Transparent" x="0" y="70" width="802" height="32" forecolor="#000000" backcolor="#FFFFFF" uuid="7366c5da-9f57-4203-9be5-2771f0645269"/>
 				<textField pattern="EEEEE dd MMMMM yyyy">
-					<reportElement x="553" y="12" width="144" height="20" forecolor="#FFFFFF" uuid="690688fa-96ea-4941-8308-e9f0c094fe99"/>
+					<reportElement x="553" y="12" width="144" height="20" forecolor="#000000" uuid="690688fa-96ea-4941-8308-e9f0c094fe99"/>
 					<textElement textAlignment="Right">
 						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
 				</textField>
 			</frame>
+			<line>
+				<reportElement x="0" y="100" width="802" height="1" uuid="line-header-bottom"/>
+				<graphicElement>
+					<pen lineWidth="1.0" lineColor="#000000"/>
+				</graphicElement>
+			</line>
 		</band>
 	</title>
 	<pageHeader>
@@ -207,23 +213,23 @@
 	<pageFooter>
 		<band height="25" splitType="Stretch">
 			<frame>
-				<reportElement mode="Opaque" x="0" y="0" width="802" height="25" forecolor="#D0B48E" backcolor="#000000" uuid="729c3539-f946-4d0e-a0a7-bda2815ea1b0"/>
+				<reportElement mode="Transparent" x="0" y="0" width="802" height="25" forecolor="#000000" backcolor="#FFFFFF" uuid="729c3539-f946-4d0e-a0a7-bda2815ea1b0"/>
 				<textField evaluationTime="Report">
-					<reportElement style="Column header" x="757" y="3" width="40" height="20" forecolor="#FFFFFF" uuid="4834e99c-7f6c-485a-b098-50e5187f2ab4"/>
+					<reportElement style="Column header" x="757" y="3" width="40" height="20" forecolor="#000000" uuid="4834e99c-7f6c-485a-b098-50e5187f2ab4"/>
 					<textElement verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
 				</textField>
 				<textField>
-					<reportElement style="Column header" x="677" y="3" width="80" height="20" forecolor="#FFFFFF" uuid="9825b46e-76f1-469a-abb8-a1cc27aad685"/>
+					<reportElement style="Column header" x="677" y="3" width="80" height="20" forecolor="#000000" uuid="9825b46e-76f1-469a-abb8-a1cc27aad685"/>
 					<textElement textAlignment="Right" verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
 				</textField>
 				<textField pattern="EEEEE dd MMMMM yyyy">
-					<reportElement style="Column header" x="2" y="3" width="197" height="20" forecolor="#FFFFFF" uuid="137d38c7-1a83-4fc5-b156-9d5f1b1a0ddc"/>
+					<reportElement style="Column header" x="2" y="3" width="197" height="20" forecolor="#000000" uuid="137d38c7-1a83-4fc5-b156-9d5f1b1a0ddc"/>
 					<textElement verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>
