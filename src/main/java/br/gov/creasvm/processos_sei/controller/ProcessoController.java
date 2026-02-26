@@ -1,5 +1,6 @@
 package br.gov.creasvm.processos_sei.controller;
 
+import br.gov.creasvm.processos_sei.dto.HistoricoProcessoDTO;
 import br.gov.creasvm.processos_sei.dto.ProcessoDTO;
 import br.gov.creasvm.processos_sei.dto.ProcessoFiltroDTO;
 import br.gov.creasvm.processos_sei.service.ProcessoService;
@@ -169,5 +170,13 @@ public class ProcessoController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @Operation(summary = "Consultar histórico do processo",
+            description = "Retorna o histórico de alterações de um processo específico")
+    @GetMapping("/{id}/historico")
+    public ResponseEntity<List<HistoricoProcessoDTO>> consultarHistorico(
+            @Parameter(description = "ID do processo") @PathVariable Long id) {
+        return ResponseEntity.ok(processoService.getHistoricoPorProcessoId(id));
     }
 }

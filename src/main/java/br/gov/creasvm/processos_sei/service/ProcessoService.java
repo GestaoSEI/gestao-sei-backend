@@ -1,5 +1,6 @@
 package br.gov.creasvm.processos_sei.service;
 
+import br.gov.creasvm.processos_sei.dto.HistoricoProcessoDTO;
 import br.gov.creasvm.processos_sei.dto.ProcessoDTO;
 import br.gov.creasvm.processos_sei.dto.ProcessoFiltroDTO;
 
@@ -13,6 +14,7 @@ public interface ProcessoService {
     ProcessoDTO atualizar(Long id, ProcessoDTO processoDTO);
     List<ProcessoDTO> filtrar(ProcessoFiltroDTO filtro);
     List<ProcessoDTO> buscarPorPalavraChave(String keyword);
+    List<HistoricoProcessoDTO> getHistoricoPorProcessoId(Long processoId);
 
     void deletar(Long id);
 }
