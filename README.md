@@ -103,13 +103,13 @@ jwt.expiration=86400000
 mvn spring-boot:run
 ```
 
-A aplicação estará disponível em: **http://localhost:8080**
+A aplicação estará disponível em: **http://localhost:8081**
 
 ## 📚 Documentação da API
 
 Acesse a documentação interativa:
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
+- **Swagger UI**: http://localhost:8081/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8081/v3/api-docs
 
 ## 🔧 Endpoints Principais
 
@@ -163,7 +163,7 @@ java -jar target/gestao-sei-backend-0.0.1-SNAPSHOT.jar
 ### **Docker**
 ```bash
 docker build -t gestao-sei-backend .
-docker run -p 8080:8080 gestao-sei-backend
+docker run -p 8081:8081 gestao-sei-backend
 ```
 
 ## 🔐 Segurança
@@ -214,7 +214,7 @@ Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](L
 ## 🙋‍♀️ Suporte
 
 - 📧 **Email**: gvmedeiros@prefeitura.gov.sp.br
-- 💼 **LinkedIn**: [linkedin.com/in/gilvaneide-medeiros](https://linkedin.com/in/gilvaneide-medeiros)
+- 💼 **LinkedIn**: [linkedin.com/in/gilvaneide-bertaccini](https://linkedin.com/in/gilvaneide-bertaccini/)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/GestaoSEI/gestao-sei-backend/issues)
 - 📖 **Wiki**: [Documentação Completa](https://github.com/GestaoSEI/gestao-sei-backend/wiki)
 
