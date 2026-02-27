@@ -3,6 +3,7 @@ package br.gov.gestaosei.gestao_sei_backend.controller;
 import br.gov.gestaosei.gestao_sei_backend.dto.AuthenticationDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.LoginResponseDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.RegisterDTO;
+import br.gov.gestaosei.gestao_sei_backend.model.Role;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
 import br.gov.gestaosei.gestao_sei_backend.repository.UsuarioRepository;
 import br.gov.gestaosei.gestao_sei_backend.service.TokenService;
@@ -45,7 +46,8 @@ public class AuthenticationController {
         if (usuarioRepository.findByLogin(data.login()) != null) return ResponseEntity.badRequest().build();
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.senha());
-        Usuario newUser = new Usuario(data.login(), encryptedPassword, data.role());
+        Role userRole = Role.valueOf(data.role());
+        Usuario newUser = new Usuario(data.login(), encryptedPassword, userRole);
 
         usuarioRepository.save(newUser);
 

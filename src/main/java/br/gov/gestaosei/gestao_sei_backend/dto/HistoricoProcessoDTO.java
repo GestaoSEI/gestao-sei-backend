@@ -12,8 +12,8 @@ public class HistoricoProcessoDTO {
     private String usuarioLogin;
     private String statusAnterior;
     private String statusNovo;
-    private String unidadeAnterior;
-    private String unidadeNova;
+    private String origem;
+    private String unidadeAtual;
     private String observacaoDaMudanca;
 
     public HistoricoProcessoDTO(HistoricoProcesso historico) {
@@ -22,8 +22,8 @@ public class HistoricoProcessoDTO {
         this.usuarioLogin = historico.getUsuario().getLogin();
         this.statusAnterior = historico.getStatusAnterior();
         this.statusNovo = historico.getStatusNovo();
-        this.unidadeAnterior = historico.getUnidadeAnterior();
-        this.unidadeNova = historico.getUnidadeNova();
+        this.origem = historico.getUnidadeAnterior() != null ? historico.getUnidadeAnterior() : historico.getProcesso().getOrigem();
+        this.unidadeAtual = historico.getUnidadeNova() != null ? historico.getUnidadeNova() : historico.getProcesso().getUnidadeAtual();
         this.observacaoDaMudanca = historico.getObservacaoDaMudanca();
     }
 }
