@@ -19,11 +19,13 @@ public class HistoricoProcessoDTO {
     public HistoricoProcessoDTO(HistoricoProcesso historico) {
         this.id = historico.getId();
         this.dataAtualizacao = historico.getDataAtualizacao();
-        this.usuarioLogin = historico.getUsuario().getLogin();
+        this.usuarioLogin = historico.getUsuario() != null ? historico.getUsuario().getLogin() : null;
         this.statusAnterior = historico.getStatusAnterior();
         this.statusNovo = historico.getStatusNovo();
-        this.origem = historico.getUnidadeAnterior() != null ? historico.getUnidadeAnterior() : historico.getProcesso().getOrigem();
-        this.unidadeAtual = historico.getUnidadeNova() != null ? historico.getUnidadeNova() : historico.getProcesso().getUnidadeAtual();
+        this.origem = historico.getUnidadeAnterior() != null ? historico.getUnidadeAnterior() : 
+                     (historico.getProcesso() != null ? historico.getProcesso().getOrigem() : null);
+        this.unidadeAtual = historico.getUnidadeNova() != null ? historico.getUnidadeNova() : 
+                          (historico.getProcesso() != null ? historico.getProcesso().getUnidadeAtual() : null);
         this.observacaoDaMudanca = historico.getObservacaoDaMudanca();
     }
 }
