@@ -10,11 +10,11 @@
 		<relativePath/>
 	</parent>
 
-	<groupId>br.gov.creasvm</groupId>
-	<artifactId>processos-sei</artifactId>
+	<groupId>br.gov.gestaosei</groupId>
+	<artifactId>gestao-sei-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>processos-sei</name>
-	<description>Sistema de Controle de Processos SEI - CREASVM</description>
+	<name>gestao-sei-backend</name>
+	<description>Backend da aplicação GestaoSEI para controle de processos</description>
 
 	<properties>
 		<java.version>21</java.version>
