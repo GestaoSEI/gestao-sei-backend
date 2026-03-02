@@ -1,13 +1,8 @@
 package br.gov.gestaosei.gestao_sei_backend.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
 @Entity
 @Table(name = "historico_processos")
 public class HistoricoProcesso {
@@ -36,6 +31,10 @@ public class HistoricoProcesso {
     @Column(columnDefinition = "TEXT")
     private String observacaoDaMudanca;
 
+    public HistoricoProcesso() {
+        // Construtor padrão
+    }
+
     public HistoricoProcesso(Processo processo, Usuario usuario, String statusAnterior, String statusNovo, String unidadeAnterior, String unidadeNova, String observacaoDaMudanca) {
         this.processo = processo;
         this.usuario = usuario;
@@ -44,6 +43,79 @@ public class HistoricoProcesso {
         this.statusNovo = statusNovo;
         this.unidadeAnterior = unidadeAnterior;
         this.unidadeNova = unidadeNova;
+        this.observacaoDaMudanca = observacaoDaMudanca;
+    }
+
+    // Getters e Setters manuais
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Processo getProcesso() {
+        return processo;
+    }
+
+    public void setProcesso(Processo processo) {
+        this.processo = processo;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
+    public LocalDateTime getDataAtualizacao() {
+        return dataAtualizacao;
+    }
+
+    public void setDataAtualizacao(LocalDateTime dataAtualizacao) {
+        this.dataAtualizacao = dataAtualizacao;
+    }
+
+    public String getStatusAnterior() {
+        return statusAnterior;
+    }
+
+    public void setStatusAnterior(String statusAnterior) {
+        this.statusAnterior = statusAnterior;
+    }
+
+    public String getStatusNovo() {
+        return statusNovo;
+    }
+
+    public void setStatusNovo(String statusNovo) {
+        this.statusNovo = statusNovo;
+    }
+
+    public String getUnidadeAnterior() {
+        return unidadeAnterior;
+    }
+
+    public void setUnidadeAnterior(String unidadeAnterior) {
+        this.unidadeAnterior = unidadeAnterior;
+    }
+
+    public String getUnidadeNova() {
+        return unidadeNova;
+    }
+
+    public void setUnidadeNova(String unidadeNova) {
+        this.unidadeNova = unidadeNova;
+    }
+
+    public String getObservacaoDaMudanca() {
+        return observacaoDaMudanca;
+    }
+
+    public void setObservacaoDaMudanca(String observacaoDaMudanca) {
         this.observacaoDaMudanca = observacaoDaMudanca;
     }
 }

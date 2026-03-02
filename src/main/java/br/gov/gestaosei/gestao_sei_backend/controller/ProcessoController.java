@@ -8,7 +8,6 @@ import br.gov.gestaosei.gestao_sei_backend.service.RelatorioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +21,9 @@ import java.io.FileNotFoundException;
 import java.time.LocalDate;
 import java.util.List;
 
-@Tag(name = "Processos", description = "API para gerenciamento de processos SEI")
 @RestController
 @RequestMapping("/api/processos")
+@CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class ProcessoController {
 
     private final ProcessoService processoService;
@@ -36,38 +35,19 @@ public class ProcessoController {
         this.relatorioService = relatorioService;
     }
 
+    @GetMapping
     @Operation(summary = "Listar todos os processos",
             description = "Retorna uma lista de todos os processos cadastrados")
     @ApiResponse(responseCode = "200", description = "Lista de processos retornada com sucesso")
-    @GetMapping
     public ResponseEntity<List<ProcessoDTO>> listarTodos() {
         return ResponseEntity.ok(processoService.listarTodos());
     }
 
-    @Operation(summary = "Buscar processo por ID",
-            description = "Retorna um único processo pelo seu ID")
-    @ApiResponse(responseCode = "200", description = "Processo encontrado")
-    @ApiResponse(responseCode = "404", description = "Processo não encontrado")
-    @GetMapping("/{id}")
-    public ResponseEntity<ProcessoDTO> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(processoService.buscarPorId(id));
-    }
-
-    @Operation(summary = "Buscar processo por número",
-            description = "Retorna um processo pelo seu número")
-    @ApiResponse(responseCode = "200", description = "Processo encontrado")
-    @ApiResponse(responseCode = "404", description = "Processo não encontrado")
-    @GetMapping("/numero/{numeroProcesso}")
-    public ResponseEntity<ProcessoDTO> buscarPorNumero(
-            @Parameter(description = "Número do processo a ser buscado") @PathVariable String numeroProcesso) {
-        return ResponseEntity.ok(processoService.buscarPorNumero(numeroProcesso));
-    }
-
+    @PostMapping
     @Operation(summary = "Criar novo processo",
             description = "Cria um novo processo no sistema")
     @ApiResponse(responseCode = "201", description = "Processo criado com sucesso")
     @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos")
-    @PostMapping
     public ResponseEntity<ProcessoDTO> criar(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Dados do processo a ser criado",
@@ -77,29 +57,29 @@ public class ProcessoController {
         return new ResponseEntity<>(processoCriado, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Atualizar processo por ID",
-            description = "Atualiza um processo existente pelo seu ID")
+    @PutMapping("/atualizar")
+    @Operation(summary = "Atualizar processo por número",
+            description = "Atualiza um processo existente buscando pelo seu número (passado como parâmetro)")
     @ApiResponse(responseCode = "200", description = "Processo atualizado com sucesso")
     @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos")
     @ApiResponse(responseCode = "404", description = "Processo não encontrado")
-    @PutMapping("/{id}")
-    public ResponseEntity<ProcessoDTO> atualizar(
-            @Parameter(description = "ID do processo a ser atualizado") @PathVariable Long id,
+    public ResponseEntity<ProcessoDTO> atualizarPorNumero(
+            @Parameter(description = "Número do processo a ser atualizado") @RequestParam String numero,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Dados atualizados do processo",
                     required = true)
             @Valid @RequestBody ProcessoDTO processoDTO) {
-        return ResponseEntity.ok(processoService.atualizar(id, processoDTO));
+        return ResponseEntity.ok(processoService.atualizarPorNumero(numero, processoDTO));
     }
 
-    @Operation(summary = "Excluir processo",
-            description = "Remove um processo do sistema pelo seu ID")
+    @DeleteMapping("/excluir")
+    @Operation(summary = "Excluir processo por número",
+            description = "Remove um processo do sistema pelo seu número (passado como parâmetro)")
     @ApiResponse(responseCode = "204", description = "Processo excluído com sucesso")
     @ApiResponse(responseCode = "404", description = "Processo não encontrado")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(
-            @Parameter(description = "ID do processo a ser excluído") @PathVariable Long id) {
-        processoService.deletar(id);
+    public ResponseEntity<Void> deletarPorNumero(
+            @Parameter(description = "Número do processo a ser excluído") @RequestParam String numero) {
+        processoService.deletarPorNumero(numero);
         return ResponseEntity.noContent().build();
     }
 
@@ -113,22 +93,27 @@ public class ProcessoController {
             @Parameter(description = "Data inicial do prazo final") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final do prazo final") @RequestParam(required = false) LocalDate dataFim) {
 
-        ProcessoFiltroDTO filtro = new ProcessoFiltroDTO();
-        filtro.setStatus(status);
-        filtro.setUnidadeAtual(unidade);
-        filtro.setPrazoExpirado(prazoExpirado);
-        filtro.setDataInicio(dataInicio);
-        filtro.setDataFim(dataFim);
-
+        ProcessoFiltroDTO filtro = new ProcessoFiltroDTO(status, unidade, prazoExpirado, dataInicio, dataFim);
         return ResponseEntity.ok(processoService.filtrar(filtro));
     }
 
-    @Operation(summary = "Buscar processos por palavra-chave",
-            description = "Busca processos que contenham a palavra-chave em qualquer campo (número, tipo, origem, unidade, status)")
     @GetMapping("/busca")
+    @Operation(summary = "Buscar processos por palavra-chave",
+            description = "Busca processos que contenham a palavra-chave no número, tipo, origem, unidade, status ou observação")
+    @ApiResponse(responseCode = "200", description = "Processos encontrados com sucesso")
     public ResponseEntity<List<ProcessoDTO>> buscarPorPalavraChave(
             @Parameter(description = "Palavra-chave para busca") @RequestParam String keyword) {
         return ResponseEntity.ok(processoService.buscarPorPalavraChave(keyword));
+    }
+
+    @GetMapping("/historico/{processoId}")
+    @Operation(summary = "Obter histórico de um processo",
+            description = "Retorna o histórico de alterações de um processo específico")
+    @ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso")
+    @ApiResponse(responseCode = "404", description = "Processo não encontrado")
+    public ResponseEntity<List<HistoricoProcessoDTO>> getHistoricoPorProcessoId(
+            @Parameter(description = "ID do processo") @PathVariable Long processoId) {
+        return ResponseEntity.ok(processoService.getHistoricoPorProcessoId(processoId));
     }
 
     @Operation(summary = "Gerar relatório PDF",
@@ -148,12 +133,7 @@ public class ProcessoController {
             if (keyword != null && !keyword.isEmpty()) {
                 processos = processoService.buscarPorPalavraChave(keyword);
             } else {
-                ProcessoFiltroDTO filtro = new ProcessoFiltroDTO();
-                filtro.setStatus(status);
-                filtro.setUnidadeAtual(unidade);
-                filtro.setPrazoExpirado(prazoExpirado);
-                filtro.setDataInicio(dataInicio);
-                filtro.setDataFim(dataFim);
+                ProcessoFiltroDTO filtro = new ProcessoFiltroDTO(status, unidade, prazoExpirado, dataInicio, dataFim);
                 processos = processoService.filtrar(filtro);
             }
 
@@ -161,7 +141,8 @@ public class ProcessoController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("inline", "relatorio_processos.pdf");
+            // Alterado para "attachment" para forçar o download
+            headers.setContentDispositionFormData("attachment", "relatorio_processos.pdf");
             headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
 
             return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
@@ -170,13 +151,5 @@ public class ProcessoController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    @Operation(summary = "Consultar histórico do processo",
-            description = "Retorna o histórico de alterações de um processo específico")
-    @GetMapping("/{id}/historico")
-    public ResponseEntity<List<HistoricoProcessoDTO>> consultarHistorico(
-            @Parameter(description = "ID do processo") @PathVariable Long id) {
-        return ResponseEntity.ok(processoService.getHistoricoPorProcessoId(id));
     }
 }

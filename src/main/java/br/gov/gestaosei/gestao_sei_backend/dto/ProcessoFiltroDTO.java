@@ -9,6 +9,17 @@ public class ProcessoFiltroDTO {
     private LocalDate dataInicio;
     private LocalDate dataFim;
 
+    public ProcessoFiltroDTO() {
+    }
+
+    public ProcessoFiltroDTO(String status, String unidadeAtual, Boolean prazoExpirado, LocalDate dataInicio, LocalDate dataFim) {
+        this.status = status;
+        this.unidadeAtual = unidadeAtual;
+        this.prazoExpirado = prazoExpirado;
+        this.dataInicio = dataInicio;
+        this.dataFim = dataFim;
+    }
+
     public String getStatus() {
         return status;
     }

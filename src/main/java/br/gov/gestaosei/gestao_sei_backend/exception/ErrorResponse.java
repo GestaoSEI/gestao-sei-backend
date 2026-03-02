@@ -2,7 +2,7 @@ package br.gov.gestaosei.gestao_sei_backend.exception;
 
 import java.time.LocalDateTime;
 
-class ErrorResponse {
+public class ErrorResponse {
     private LocalDateTime timestamp;
     private int status;
     private String error;

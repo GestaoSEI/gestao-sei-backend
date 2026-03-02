@@ -3,10 +3,18 @@ package br.gov.gestaosei.gestao_sei_backend.controller;
 import br.gov.gestaosei.gestao_sei_backend.dto.AuthenticationDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.LoginResponseDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.RegisterDTO;
+import br.gov.gestaosei.gestao_sei_backend.exception.ErrorResponse;
 import br.gov.gestaosei.gestao_sei_backend.model.Role;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
 import br.gov.gestaosei.gestao_sei_backend.repository.UsuarioRepository;
 import br.gov.gestaosei.gestao_sei_backend.service.TokenService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Autenticação", description = "API para autenticação e registro de usuários")
 public class AuthenticationController {
 
     @Autowired
@@ -32,7 +41,54 @@ public class AuthenticationController {
     private TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data) {
+    @Operation(
+        summary = "Login de usuário",
+        description = "Autentica um usuário no sistema e retorna um token JWT"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Login realizado com sucesso",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = LoginResponseDTO.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Credenciais inválidas",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Dados de login inválidos",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        )
+    })
+    public ResponseEntity login(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Credenciais de login",
+                required = true,
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = AuthenticationDTO.class),
+                    examples = @ExampleObject(
+                        value = """
+                        {
+                          "login": "joao.silva",
+                          "senha": "123456"
+                        }
+                        """
+                    )
+                )
+            )
+            @RequestBody @Valid AuthenticationDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.senha());
         var auth = authenticationManager.authenticate(usernamePassword);
 
@@ -42,7 +98,43 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody @Valid RegisterDTO data) {
+    @Operation(
+        summary = "Registrar novo usuário",
+        description = "Cria um novo usuário no sistema"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Usuário criado com sucesso"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Login já existe ou dados inválidos",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        )
+    })
+    public ResponseEntity register(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Dados do novo usuário",
+                required = true,
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = RegisterDTO.class),
+                    examples = @ExampleObject(
+                        value = """
+                        {
+                          "login": "joao.silva",
+                          "senha": "123456",
+                          "role": "USER"
+                        }
+                        """
+                    )
+                )
+            )
+            @RequestBody @Valid RegisterDTO data) {
         if (usuarioRepository.findByLogin(data.login()) != null) return ResponseEntity.badRequest().build();
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.senha());

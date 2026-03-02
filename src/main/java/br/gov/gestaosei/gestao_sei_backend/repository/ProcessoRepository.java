@@ -12,9 +12,14 @@ import java.util.Optional;
 @Repository
 public interface ProcessoRepository extends JpaRepository<Processo, Long> {
     Optional<Processo> findByNumeroProcesso(String numeroProcesso);
+    
+    List<Processo> findByNumeroProcessoContaining(String numeroProcesso);
 
     List<Processo> findByStatus(String status);
-    List<Processo> findByUnidadeAtual(String unidadeAtual);
+    
+    // Alterado para busca parcial (LIKE) e ignorando maiúsculas/minúsculas
+    List<Processo> findByUnidadeAtualContainingIgnoreCase(String unidadeAtual);
+    
     List<Processo> findByDataPrazoFinalBefore(LocalDate dataAtual);
     List<Processo> findByStatusAndUnidadeAtual(String status, String unidadeAtual);
 
@@ -27,8 +32,9 @@ public interface ProcessoRepository extends JpaRepository<Processo, Long> {
            "LOWER(p.observacao) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Processo> searchByKeyword(@Param("keyword") String keyword);
 
+    // Atualizado para usar LIKE na unidadeAtual
     @Query("SELECT p FROM Processo p WHERE " +
-           "(:unidadeAtual IS NULL OR p.unidadeAtual = :unidadeAtual) AND " +
+           "(:unidadeAtual IS NULL OR LOWER(p.unidadeAtual) LIKE LOWER(CONCAT('%', :unidadeAtual, '%'))) AND " +
            "(:dataInicio IS NULL OR p.dataPrazoFinal >= :dataInicio) AND " +
            "(:dataFim IS NULL OR p.dataPrazoFinal <= :dataFim)")
     List<Processo> findByUnidadeAndPrazoBetween(@Param("unidadeAtual") String unidadeAtual,

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61d56f459e8176eb05c7705e145cd400ad  -->
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="processos" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="4eedbb89-b4f6-4469-9ab6-f642a1688cf7">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="processos" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="99999999-9999-9999-9999-999999999999">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
-	<style name="Title" forecolor="#000000" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
-	<style name="SubTitle" forecolor="#000000" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
-	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="10" isBold="true"/>
-	<style name="Detail" mode="Transparent" fontName="Times New Roman" fontSize="10"/>
-	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
+	<style name="Title" forecolor="#000000" fontSize="50" isBold="false"/>
+	<style name="SubTitle" forecolor="#000000" fontSize="18" isBold="false"/>
+	<style name="Column header" forecolor="#666666" fontSize="10" isBold="true"/>
+	<style name="Detail" mode="Transparent" fontSize="10"/>
+	<style name="Row" mode="Transparent">
 		<conditionalStyle>
 			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
 			<style mode="Opaque" backcolor="#F0EFEF"/>
@@ -44,16 +44,16 @@
 			</frame>
 			<frame>
 				<reportElement mode="Transparent" x="0" y="70" width="802" height="32" forecolor="#000000" backcolor="#FFFFFF" uuid="7366c5da-9f57-4203-9be5-2771f0645269"/>
-				<textField pattern="EEEEE dd MMMMM yyyy">
-					<reportElement x="553" y="12" width="144" height="20" forecolor="#000000" uuid="690688fa-96ea-4941-8308-e9f0c094fe99"/>
+				<textField>
+					<reportElement x="400" y="12" width="400" height="20" forecolor="#000000" uuid="690688fa-96ea-4941-8308-e9f0c094fe99"/>
 					<textElement textAlignment="Right">
 						<font size="12"/>
 					</textElement>
-					<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+					<textFieldExpression><![CDATA[new java.text.SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", new java.util.Locale("pt", "BR")).format(new java.util.Date())]]></textFieldExpression>
 				</textField>
 			</frame>
 			<line>
-				<reportElement x="0" y="100" width="802" height="1" uuid="line-header-bottom"/>
+				<reportElement x="0" y="100" width="802" height="1" uuid="99999999-9999-9999-9999-999999999999"/>
 				<graphicElement>
 					<pen lineWidth="1.0" lineColor="#000000"/>
 				</graphicElement>
@@ -179,14 +179,14 @@
 					</textElement>
 					<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
 				</textField>
-				<textField textAdjust="StretchHeight">
+				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
 					<reportElement style="Detail" positionType="Float" x="570" y="0" width="80" height="18" uuid="46888d21-7408-4a99-9640-11e93946b779">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="3b756320-824d-4a48-bf86-5474dcd11c2c"/>
 					</reportElement>
 					<textElement>
 						<font size="10"/>
 					</textElement>
-					<textFieldExpression><![CDATA[$F{dataPrazoFinal}]]></textFieldExpression>
+					<textFieldExpression><![CDATA[java.sql.Date.valueOf($F{dataPrazoFinal})]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
 					<reportElement style="Detail" positionType="Float" x="650" y="0" width="152" height="18" uuid="f1e2d3c4-b5a6-7890-1234-567890abcdef">
@@ -228,12 +228,12 @@
 					</textElement>
 					<textFieldExpression><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
 				</textField>
-				<textField pattern="EEEEE dd MMMMM yyyy">
+				<textField>
 					<reportElement style="Column header" x="2" y="3" width="197" height="20" forecolor="#000000" uuid="137d38c7-1a83-4fc5-b156-9d5f1b1a0ddc"/>
 					<textElement verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>
-					<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+					<textFieldExpression><![CDATA[new java.text.SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", new java.util.Locale("pt", "BR")).format(new java.util.Date())]]></textFieldExpression>
 				</textField>
 			</frame>
 		</band>

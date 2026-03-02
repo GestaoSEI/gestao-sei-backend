@@ -31,10 +31,13 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public UsuarioDTO buscarPorId(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
-        return toDTO(usuario);
+    public UsuarioDTO buscarPorLogin(String login) {
+        Usuario usuario = usuarioRepository.findByLogin(login);
+        if (usuario != null) {
+            return toDTO(usuario);
+        } else {
+            throw new EntityNotFoundException("Usuário não encontrado com o login: " + login);
+        }
     }
 
     @Transactional
@@ -73,10 +76,9 @@ public class UsuarioService {
 
     @Transactional
     public void deletar(Long id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new EntityNotFoundException("Usuário não encontrado com o ID: " + id);
-        }
-        usuarioRepository.deleteById(id);
+        // MÉTODO REMOVIDO: Não é permitido excluir usuários
+        // para manter a integridade do histórico de processos
+        throw new UnsupportedOperationException("Exclusão de usuários não é permitida para manter a integridade do histórico de processos.");
     }
 
     private UsuarioDTO toDTO(Usuario usuario) {

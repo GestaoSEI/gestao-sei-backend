@@ -195,32 +195,13 @@ class UsuarioServiceTest {
     }
 
     @Test
-    @DisplayName("Deve deletar usuário com sucesso")
+    @DisplayName("Deve lançar exceção ao tentar deletar usuário")
     void testDeletarUsuario() {
-        // Arrange
-        when(usuarioRepository.existsById(1L)).thenReturn(true);
-
-        // Act
-        assertDoesNotThrow(() -> usuarioService.deletar(1L));
-
-        // Assert
-        verify(usuarioRepository).existsById(1L);
-        verify(usuarioRepository).deleteById(1L);
-    }
-
-    @Test
-    @DisplayName("Deve lançar exceção ao deletar usuário inexistente")
-    void testDeletarUsuarioInexistente() {
-        // Arrange
-        when(usuarioRepository.existsById(1L)).thenReturn(false);
-
         // Act & Assert
-        EntityNotFoundException exception = assertThrows(
-            EntityNotFoundException.class,
+        UnsupportedOperationException exception = assertThrows(
+            UnsupportedOperationException.class,
             () -> usuarioService.deletar(1L)
         );
-        assertEquals("Usuário não encontrado com o ID: 1", exception.getMessage());
-        verify(usuarioRepository).existsById(1L);
-        verify(usuarioRepository, never()).deleteById(1L);
+        assertEquals("Exclusão de usuários não é permitida para manter a integridade do histórico de processos.", exception.getMessage());
     }
 }

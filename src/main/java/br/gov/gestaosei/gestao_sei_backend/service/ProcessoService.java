@@ -9,12 +9,13 @@ import java.util.List;
 public interface ProcessoService {
     List<ProcessoDTO> listarTodos();
     ProcessoDTO buscarPorId(Long id);
-    ProcessoDTO buscarPorNumero(String numeroProcesso);
     ProcessoDTO salvar(ProcessoDTO processoDTO);
     ProcessoDTO atualizar(Long id, ProcessoDTO processoDTO);
+    ProcessoDTO atualizarPorNumero(String numeroProcesso, ProcessoDTO processoDTO);
     List<ProcessoDTO> filtrar(ProcessoFiltroDTO filtro);
     List<ProcessoDTO> buscarPorPalavraChave(String keyword);
     List<HistoricoProcessoDTO> getHistoricoPorProcessoId(Long processoId);
 
     void deletar(Long id);
+    void deletarPorNumero(String numeroProcesso);
 }

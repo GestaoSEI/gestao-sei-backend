@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -31,6 +32,8 @@ public class RelatorioService {
         // Parâmetros do relatório (se houver)
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("createdBy", "Sistema SEI");
+        // Define o Locale para pt_BR para garantir formatação de data correta
+        parameters.put(JRParameter.REPORT_LOCALE, new Locale("pt", "BR"));
 
         // Preenche o relatório
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);

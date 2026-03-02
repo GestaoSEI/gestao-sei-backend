@@ -1,38 +1,36 @@
-version: '3.8'
-
 services:
   app:
     build: .
-    container_name: processos-sei-app
+    container_name: gestao-sei-backend-app
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/processos_sei
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/gestaosei
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     depends_on:
       - db
     networks:
-      - processos-sei-network
+      - gestaosei-network
 
   db:
     image: postgres:16
-    container_name: processos-sei-db
+    container_name: gestao-sei-backend-db
     environment:
-      - POSTGRES_DB=processos_sei
+      - POSTGRES_DB=gestaosei
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
       - "5433:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - gestaosei-data:/var/lib/postgresql/data
     networks:
-      - processos-sei-network
+      - gestaosei-network
 
 volumes:
-  postgres-data:
+  gestaosei-data:
 
 networks:
-  processos-sei-network:
+  gestaosei-network:
     driver: bridge

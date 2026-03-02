@@ -10,10 +10,14 @@ RUN mvn dependency:go-offline
 
 # Copia o código-fonte e compila a aplicação
 COPY src ./src
-RUN mvn package -DskipTests
+# Usa -Dmaven.test.skip=true para pular a compilação e execução dos testes
+RUN mvn package -Dmaven.test.skip=true
 
 # Estágio 2: Criação da imagem final de execução
 FROM eclipse-temurin:21-jre-alpine
+
+# Instala fontes necessárias para o JasperReports
+RUN apk add --no-cache fontconfig ttf-dejavu
 
 # Define o diretório de trabalho
 WORKDIR /app

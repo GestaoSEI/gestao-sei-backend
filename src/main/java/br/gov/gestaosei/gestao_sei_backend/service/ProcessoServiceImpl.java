@@ -39,21 +39,22 @@ public class ProcessoServiceImpl implements ProcessoService {
         List<Processo> processos;
         LocalDate hoje = LocalDate.now();
 
-        if (filtro.getDataInicio() != null || filtro.getDataFim() != null) {
+        // Se houver datas ou unidade, usa a query personalizada que suporta LIKE na unidade
+        if (filtro.getDataInicio() != null || filtro.getDataFim() != null || filtro.getUnidadeAtual() != null) {
             processos = processoRepository.findByUnidadeAndPrazoBetween(
                     filtro.getUnidadeAtual(),
                     filtro.getDataInicio(),
                     filtro.getDataFim()
             );
-        } else if (filtro.getStatus() != null && filtro.getUnidadeAtual() != null) {
-            processos = processoRepository.findByStatusAndUnidadeAtual(
-                    filtro.getStatus(),
-                    filtro.getUnidadeAtual()
-            );
+            
+            // Se também houver status, filtra em memória (já que a query acima não filtra status)
+            if (filtro.getStatus() != null) {
+                processos = processos.stream()
+                        .filter(p -> p.getStatus().equalsIgnoreCase(filtro.getStatus()))
+                        .collect(Collectors.toList());
+            }
         } else if (filtro.getStatus() != null) {
             processos = processoRepository.findByStatus(filtro.getStatus());
-        } else if (filtro.getUnidadeAtual() != null) {
-            processos = processoRepository.findByUnidadeAtual(filtro.getUnidadeAtual());
         } else if (Boolean.TRUE.equals(filtro.getPrazoExpirado())) {
             processos = processoRepository.findByDataPrazoFinalBefore(hoje);
         } else {
@@ -81,7 +82,7 @@ public class ProcessoServiceImpl implements ProcessoService {
     public List<HistoricoProcessoDTO> getHistoricoPorProcessoId(Long processoId) {
         return historicoProcessoRepository.findByProcessoIdOrderByDataAtualizacaoDesc(processoId)
                 .stream()
-                .map(HistoricoProcessoDTO::new)
+                .map(h -> new HistoricoProcessoDTO(h))
                 .collect(Collectors.toList());
     }
 
@@ -102,14 +103,6 @@ public class ProcessoServiceImpl implements ProcessoService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public ProcessoDTO buscarPorNumero(String numeroProcesso) {
-        Processo processo = processoRepository.findByNumeroProcesso(numeroProcesso)
-                .orElseThrow(() -> new EntityNotFoundException("Processo não encontrado com o número: " + numeroProcesso));
-        return toDTO(processo);
-    }
-
-    @Override
     @Transactional
     public ProcessoDTO salvar(ProcessoDTO processoDTO) {
         Processo processo = toEntity(processoDTO);
@@ -123,14 +116,30 @@ public class ProcessoServiceImpl implements ProcessoService {
         Processo processoExistente = processoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Processo não encontrado com o ID: " + id));
 
+        return atualizarProcessoExistente(processoExistente, processoDTO);
+    }
+
+    @Override
+    @Transactional
+    public ProcessoDTO atualizarPorNumero(String numeroProcesso, ProcessoDTO processoDTO) {
+        Processo processoExistente = processoRepository.findByNumeroProcesso(numeroProcesso)
+                .orElseThrow(() -> new EntityNotFoundException("Processo não encontrado com o número: " + numeroProcesso));
+
+        return atualizarProcessoExistente(processoExistente, processoDTO);
+    }
+
+    private ProcessoDTO atualizarProcessoExistente(Processo processoExistente, ProcessoDTO processoDTO) {
         // Guarda os valores antigos para comparação
         String statusAnterior = processoExistente.getStatus();
         String unidadeAnterior = processoExistente.getUnidadeAtual();
 
         // Atualiza o processo com os novos dados
-        Processo processoAtualizado = toEntity(processoDTO);
-        processoAtualizado.setId(processoExistente.getId());
-        processoRepository.save(processoAtualizado);
+        // Preserva o ID original
+        Long idOriginal = processoExistente.getId();
+        BeanUtils.copyProperties(processoDTO, processoExistente, "id");
+        processoExistente.setId(idOriginal);
+        
+        Processo processoAtualizado = processoRepository.save(processoExistente);
 
         // Obtém o usuário logado
         Usuario usuarioLogado = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -162,6 +171,14 @@ public class ProcessoServiceImpl implements ProcessoService {
             throw new EntityNotFoundException("Processo não encontrado com o ID: " + id);
         }
         processoRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void deletarPorNumero(String numeroProcesso) {
+        Processo processo = processoRepository.findByNumeroProcesso(numeroProcesso)
+                .orElseThrow(() -> new EntityNotFoundException("Processo não encontrado com o número: " + numeroProcesso));
+        processoRepository.delete(processo);
     }
 
     private ProcessoDTO toDTO(Processo processo) {
