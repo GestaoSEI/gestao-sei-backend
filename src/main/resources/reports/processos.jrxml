@@ -19,6 +19,7 @@
 	<field name="status" class="java.lang.String"/>
 	<field name="dataPrazoFinal" class="java.time.LocalDate"/>
 	<field name="observacao" class="java.lang.String"/>
+	<field name="alertaPrazo" class="java.lang.String"/>
 	<background>
 		<band splitType="Stretch"/>
 	</background>
@@ -196,6 +197,14 @@
 						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{observacao}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="555" y="0" width="15" height="18" forecolor="#FF0000" uuid="alert-icon-uuid">
+					</reportElement>
+					<textElement textAlignment="Center" verticalAlignment="Top">
+						<font size="10" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{alertaPrazo}]]></textFieldExpression>
 				</textField>
 			</frame>
 		</band>

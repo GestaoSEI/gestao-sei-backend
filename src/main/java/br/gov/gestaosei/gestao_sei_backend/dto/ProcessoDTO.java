@@ -38,6 +38,9 @@ public class ProcessoDTO {
     @Schema(description = "Observações adicionais sobre o processo", example = "Processo aguardando assinatura do diretor")
     private String observacao;
 
+    @Schema(description = "Símbolo de alerta se o prazo estiver próximo (!)", example = "!")
+    private String alertaPrazo = "";
+
     //Getters e Setters
     public Long getId() {
         return id;
@@ -101,5 +104,13 @@ public class ProcessoDTO {
 
     public void setObservacao(String observacao) {
         this.observacao = observacao;
+    }
+
+    public String getAlertaPrazo() {
+        return alertaPrazo;
+    }
+
+    public void setAlertaPrazo(String alertaPrazo) {
+        this.alertaPrazo = alertaPrazo;
     }
 }

@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -184,6 +186,18 @@ public class ProcessoServiceImpl implements ProcessoService {
     private ProcessoDTO toDTO(Processo processo) {
         ProcessoDTO dto = new ProcessoDTO();
         BeanUtils.copyProperties(processo, dto);
+        
+        // Calcula o alerta de prazo
+        if (processo.getDataPrazoFinal() != null) {
+            long diasParaVencer = ChronoUnit.DAYS.between(LocalDate.now(), processo.getDataPrazoFinal());
+            // Alerta se vencer em 5 dias ou menos (incluindo vencidos)
+            if (diasParaVencer <= 5) {
+                dto.setAlertaPrazo("!");
+            } else {
+                dto.setAlertaPrazo("");
+            }
+        }
+        
         return dto;
     }
 
