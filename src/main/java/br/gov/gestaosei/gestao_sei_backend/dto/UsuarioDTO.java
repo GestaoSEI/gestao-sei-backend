@@ -2,22 +2,26 @@ package br.gov.gestaosei.gestao_sei_backend.dto;
 
 import br.gov.gestaosei.gestao_sei_backend.model.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "DTO para transferência de dados de usuários")
-public record UsuarioDTO(
+public class UsuarioDTO {
     
     @Schema(description = "ID do usuário", example = "1")
-    Long id,
+    private Long id;
     
     @Schema(description = "Login do usuário", example = "joao.silva", required = true)
     @NotBlank(message = "Login é obrigatório")
-    String login,
+    private String login;
     
     @Schema(description = "Perfil do usuário", example = "USER", required = true)
     @NotNull(message = "Perfil é obrigatório")
-    Role role
-) {
+    private Role role;
 }

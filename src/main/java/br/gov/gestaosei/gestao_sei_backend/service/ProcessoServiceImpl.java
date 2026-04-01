@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
@@ -84,7 +83,7 @@ public class ProcessoServiceImpl implements ProcessoService {
     public List<HistoricoProcessoDTO> getHistoricoPorProcessoId(Long processoId) {
         return historicoProcessoRepository.findByProcessoIdOrderByDataAtualizacaoDesc(processoId)
                 .stream()
-                .map(h -> new HistoricoProcessoDTO(h))
+                .map(HistoricoProcessoDTO::new)
                 .collect(Collectors.toList());
     }
 
@@ -191,11 +190,9 @@ public class ProcessoServiceImpl implements ProcessoService {
         if (processo.getDataPrazoFinal() != null) {
             long diasParaVencer = ChronoUnit.DAYS.between(LocalDate.now(), processo.getDataPrazoFinal());
             // Alerta se vencer em 5 dias ou menos (incluindo vencidos)
-            if (diasParaVencer <= 5) {
-                dto.setAlertaPrazo("!");
-            } else {
-                dto.setAlertaPrazo("");
-            }
+            dto.setAlertaUrgencia(diasParaVencer <= 5);
+        } else {
+            dto.setAlertaUrgencia(false);
         }
         
         return dto;

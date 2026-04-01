@@ -43,13 +43,13 @@ public class UsuarioService {
     @Transactional
     public UsuarioDTO criar(UsuarioDTO dto) {
         // Verificar se login já existe
-        if (usuarioRepository.findByLogin(dto.login()) != null) {
-            throw new IllegalArgumentException("Login já existe: " + dto.login());
+        if (usuarioRepository.findByLogin(dto.getLogin()) != null) {
+            throw new IllegalArgumentException("Login já existe: " + dto.getLogin());
         }
 
         Usuario usuario = new Usuario();
-        usuario.setLogin(dto.login());
-        usuario.setRole(dto.role());
+        usuario.setLogin(dto.getLogin());
+        usuario.setRole(dto.getRole());
         usuario.setSenha(passwordEncoder.encode("senha123")); // Senha padrão
 
         usuario = usuarioRepository.save(usuario);
@@ -62,13 +62,13 @@ public class UsuarioService {
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
 
         // Verificar se login já existe (para outro usuário)
-        Usuario usuarioComMesmoLogin = usuarioRepository.findByLogin(dto.login());
+        Usuario usuarioComMesmoLogin = usuarioRepository.findByLogin(dto.getLogin());
         if (usuarioComMesmoLogin != null && !usuarioComMesmoLogin.getId().equals(id)) {
-            throw new IllegalArgumentException("Login já existe: " + dto.login());
+            throw new IllegalArgumentException("Login já existe: " + dto.getLogin());
         }
 
-        usuarioExistente.setLogin(dto.login());
-        usuarioExistente.setRole(dto.role());
+        usuarioExistente.setLogin(dto.getLogin());
+        usuarioExistente.setRole(dto.getRole());
 
         usuarioRepository.save(usuarioExistente);
         return toDTO(usuarioExistente);

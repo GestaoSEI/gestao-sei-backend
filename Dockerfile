@@ -10,8 +10,8 @@ RUN mvn dependency:go-offline
 
 # Copia o código-fonte e compila a aplicação
 COPY src ./src
-# Usa -Dmaven.test.skip=true para pular a compilação e execução dos testes
-RUN mvn package -Dmaven.test.skip=true
+# Executa os testes e gera o pacote JAR
+RUN mvn package
 
 # Estágio 2: Criação da imagem final de execução
 FROM eclipse-temurin:21-jre-alpine

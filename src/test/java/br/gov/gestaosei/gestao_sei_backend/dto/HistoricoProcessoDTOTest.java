@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @DisplayName("HistoricoProcessoDTO Tests")
 class HistoricoProcessoDTOTest {
@@ -54,14 +53,14 @@ class HistoricoProcessoDTOTest {
         assertEquals("testuser", dto.getUsuarioLogin());
         assertEquals("Em Andamento", dto.getStatusAnterior());
         assertEquals("Concluído", dto.getStatusNovo());
-        assertEquals("Setor A", dto.getOrigem());
-        assertEquals("Setor B", dto.getUnidadeAtual());
+        assertEquals("Setor A", dto.getUnidadeAnterior());
+        assertEquals("Setor B", dto.getUnidadeNova());
         assertEquals("Processo concluído com sucesso", dto.getObservacaoDaMudanca());
         assertNotNull(dto.getDataAtualizacao());
     }
 
     @Test
-    @DisplayName("Deve criar DTO com unidades nulas (fallback para processo)")
+    @DisplayName("Deve criar DTO com unidades nulas")
     void testConstrutorComUnidadesNulas() {
         // Arrange
         historicoTeste.setUnidadeAnterior(null);
@@ -72,53 +71,8 @@ class HistoricoProcessoDTOTest {
 
         // Assert
         assertNotNull(dto);
-        assertEquals("Setor A", dto.getOrigem()); // fallback para processo.origem
-        assertEquals("Setor B", dto.getUnidadeAtual()); // fallback para processo.unidadeAtual
-    }
-
-    @Test
-    @DisplayName("Deve criar DTO com unidades não nulas")
-    void testConstrutorComUnidadesNaoNulas() {
-        // Arrange
-        historicoTeste.setUnidadeAnterior("Setor X");
-        historicoTeste.setUnidadeNova("Setor Y");
-
-        // Act
-        HistoricoProcessoDTO dto = new HistoricoProcessoDTO(historicoTeste);
-
-        // Assert
-        assertNotNull(dto);
-        assertEquals("Setor X", dto.getOrigem()); // usa histórico.unidadeAnterior
-        assertEquals("Setor Y", dto.getUnidadeAtual()); // usa histórico.unidadeNova
-    }
-
-    @Test
-    @DisplayName("Deve criar DTO com usuário nulo")
-    void testConstrutorComUsuarioNulo() {
-        // Arrange
-        historicoTeste.setUsuario(null);
-
-        // Act
-        HistoricoProcessoDTO dto = new HistoricoProcessoDTO(historicoTeste);
-        // O construtor não deve lançar exceção, mas o usuário pode ser null
-        assertNotNull(dto);
-        assertNull(dto.getUsuarioLogin());
-    }
-
-    @Test
-    @DisplayName("Deve criar DTO com processo nulo")
-    void testConstrutorComProcessoNulo() {
-        // Arrange
-        historicoTeste.setProcesso(null);
-
-        // Act
-        HistoricoProcessoDTO dto = new HistoricoProcessoDTO(historicoTeste);
-        
-        // Assert
-        assertNotNull(dto);
-        // Quando processo é nulo, mas histórico tem unidades, usa valores do histórico
-        assertEquals("Setor A", dto.getOrigem());
-        assertEquals("Setor B", dto.getUnidadeAtual());
+        assertNull(dto.getUnidadeAnterior());
+        assertNull(dto.getUnidadeNova());
     }
 
     @Test

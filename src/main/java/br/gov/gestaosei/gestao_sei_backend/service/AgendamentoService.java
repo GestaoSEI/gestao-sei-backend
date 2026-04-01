@@ -18,8 +18,8 @@ public class AgendamentoService {
         this.processoRepository = processoRepository;
     }
 
-    // Executa todos os dias à 1h da manhã
-    @Scheduled(cron = "0 0 1 * * ?")
+    // Executa todos os dias à meia-noite (00:00)
+    @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void verificarProcessosVencidos() {
         LocalDate hoje = LocalDate.now();
@@ -29,16 +29,17 @@ public class AgendamentoService {
 
         for (Processo processo : processosVencidos) {
             if (!isStatusFinal(processo.getStatus())) {
-                processo.setStatus("Expirado");
+                processo.setStatus("EXPIRADO");
                 processoRepository.save(processo);
-                System.out.println("Processo " + processo.getNumeroProcesso() + " atualizado para Expirado.");
+                System.out.println("Processo " + processo.getNumeroProcesso() + " atualizado para EXPIRADO automaticamente.");
             }
         }
     }
 
     private boolean isStatusFinal(String status) {
+        if (status == null) return false;
         return "Concluído".equalsIgnoreCase(status) || 
                "Arquivado".equalsIgnoreCase(status) || 
-               "Expirado".equalsIgnoreCase(status);
+               "EXPIRADO".equalsIgnoreCase(status);
     }
 }

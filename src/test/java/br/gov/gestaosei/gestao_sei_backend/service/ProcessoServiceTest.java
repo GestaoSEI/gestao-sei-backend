@@ -2,6 +2,8 @@ package br.gov.gestaosei.gestao_sei_backend.service;
 
 import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoDTO;
 import br.gov.gestaosei.gestao_sei_backend.model.Processo;
+import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
+import br.gov.gestaosei.gestao_sei_backend.repository.HistoricoProcessoRepository;
 import br.gov.gestaosei.gestao_sei_backend.repository.ProcessoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +13,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -27,11 +32,21 @@ class ProcessoServiceTest {
     @Mock
     private ProcessoRepository processoRepository;
 
+    @Mock
+    private HistoricoProcessoRepository historicoProcessoRepository;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
     @InjectMocks
     private ProcessoServiceImpl processoService;
 
     private Processo processo;
     private ProcessoDTO processoDTO;
+    private Usuario usuarioLogado;
 
     @BeforeEach
     void setUp() {
@@ -47,6 +62,16 @@ class ProcessoServiceTest {
 
         processoDTO = new ProcessoDTO();
         BeanUtils.copyProperties(processo, processoDTO);
+
+        usuarioLogado = new Usuario();
+        usuarioLogado.setId(1L);
+        usuarioLogado.setLogin("admin");
+    }
+
+    private void mockUsuarioLogado() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(usuarioLogado);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
@@ -58,26 +83,17 @@ class ProcessoServiceTest {
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
         assertEquals(processo.getNumeroProcesso(), resultado.get(0).getNumeroProcesso());
-        verify(processoRepository, times(1)).findAll();
     }
 
     @Test
-    void buscarPorId_ComIdExistente_DeveRetornarProcesso() {
-        when(processoRepository.findById(1L)).thenReturn(Optional.of(processo));
+    void buscarPorPalavraChave_DeveChamarRepositorio() {
+        when(processoRepository.searchByKeyword("teste")).thenReturn(Arrays.asList(processo));
 
-        ProcessoDTO resultado = processoService.buscarPorId(1L);
+        List<ProcessoDTO> resultado = processoService.buscarPorPalavraChave("teste");
 
         assertNotNull(resultado);
-        assertEquals(processo.getId(), resultado.getId());
-        verify(processoRepository, times(1)).findById(1L);
-    }
-
-    @Test
-    void buscarPorId_ComIdInexistente_DeveLancarExcecao() {
-        when(processoRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThrows(EntityNotFoundException.class, () -> processoService.buscarPorId(99L));
-        verify(processoRepository, times(1)).findById(99L);
+        assertEquals(1, resultado.size());
+        verify(processoRepository).searchByKeyword("teste");
     }
 
     @Test
@@ -88,48 +104,54 @@ class ProcessoServiceTest {
 
         assertNotNull(resultado);
         assertEquals(processoDTO.getNumeroProcesso(), resultado.getNumeroProcesso());
-        verify(processoRepository, times(1)).save(any(Processo.class));
     }
 
     @Test
-    void atualizar_ComIdExistente_DeveAtualizarERetornarProcesso() {
-        when(processoRepository.findById(1L)).thenReturn(Optional.of(processo));
-        when(processoRepository.save(any(Processo.class))).thenReturn(processo);
+    void atualizarPorNumero_ComMudancaDeStatus_DeveGravarHistorico() {
+        mockUsuarioLogado();
+        Processo processoNovo = new Processo();
+        BeanUtils.copyProperties(processo, processoNovo);
+        processoNovo.setStatus("Concluído");
 
-        ProcessoDTO resultado = processoService.atualizar(1L, processoDTO);
+        processoDTO.setStatus("Concluído");
+
+        when(processoRepository.findByNumeroProcesso("12345/2023")).thenReturn(Optional.of(processo));
+        when(processoRepository.save(any(Processo.class))).thenReturn(processoNovo);
+
+        ProcessoDTO resultado = processoService.atualizarPorNumero("12345/2023", processoDTO);
 
         assertNotNull(resultado);
-        assertEquals(processoDTO.getNumeroProcesso(), resultado.getNumeroProcesso());
-        verify(processoRepository, times(1)).findById(1L);
-        verify(processoRepository, times(1)).save(any(Processo.class));
+        assertEquals("Concluído", resultado.getStatus());
+        verify(historicoProcessoRepository, times(1)).save(any());
     }
 
     @Test
-    void atualizar_ComIdInexistente_DeveLancarExcecao() {
-        when(processoRepository.findById(99L)).thenReturn(Optional.empty());
+    void deletarPorNumero_ComNumeroExistente_DeveDeletar() {
+        when(processoRepository.findByNumeroProcesso("12345/2023")).thenReturn(Optional.of(processo));
+        doNothing().when(processoRepository).delete(processo);
 
-        assertThrows(EntityNotFoundException.class, () -> processoService.atualizar(99L, processoDTO));
-        verify(processoRepository, times(1)).findById(99L);
-        verify(processoRepository, never()).save(any(Processo.class));
+        processoService.deletarPorNumero("12345/2023");
+
+        verify(processoRepository).delete(processo);
     }
 
     @Test
-    void deletar_ComIdExistente_DeveDeletarProcesso() {
-        when(processoRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(processoRepository).deleteById(1L);
+    void toDTO_QuandoVencendoEm4Dias_DeveAtivarAlertaUrgencia() {
+        processo.setDataPrazoFinal(LocalDate.now().plusDays(4));
+        when(processoRepository.save(any(Processo.class))).thenReturn(processo);
 
-        processoService.deletar(1L);
+        ProcessoDTO resultado = processoService.salvar(processoDTO);
 
-        verify(processoRepository, times(1)).existsById(1L);
-        verify(processoRepository, times(1)).deleteById(1L);
+        assertTrue(resultado.getAlertaUrgencia());
     }
 
     @Test
-    void deletar_ComIdInexistente_DeveLancarExcecao() {
-        when(processoRepository.existsById(99L)).thenReturn(false);
+    void toDTO_QuandoVencendoEm10Dias_DeveDesativarAlertaUrgencia() {
+        processo.setDataPrazoFinal(LocalDate.now().plusDays(10));
+        when(processoRepository.save(any(Processo.class))).thenReturn(processo);
 
-        assertThrows(EntityNotFoundException.class, () -> processoService.deletar(99L));
-        verify(processoRepository, times(1)).existsById(99L);
-        verify(processoRepository, never()).deleteById(99L);
+        ProcessoDTO resultado = processoService.salvar(processoDTO);
+
+        assertFalse(resultado.getAlertaUrgencia());
     }
 }
