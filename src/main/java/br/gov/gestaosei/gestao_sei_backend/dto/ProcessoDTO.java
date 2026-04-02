@@ -2,6 +2,7 @@ package br.gov.gestaosei.gestao_sei_backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
 
@@ -11,8 +12,9 @@ public class ProcessoDTO {
     @Schema(description = "ID único do processo", example = "1")
     private Long id;
 
-    @Schema(description = "Número único do processo", example = "12345/2023", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Número único do processo", example = "6024.2023/0001234-5", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "O número do processo é obrigatório!")
+    @Pattern(regexp = "^\\d{4}\\.\\d{4}/\\d{7}-\\d{1}$", message = "O número do processo deve seguir o padrão xxxx.xxxx/xxxxxxx-x")
     private String numeroProcesso;
 
     @Schema(description = "Tipo do processo", example = "Administrativo", requiredMode = Schema.RequiredMode.REQUIRED)
