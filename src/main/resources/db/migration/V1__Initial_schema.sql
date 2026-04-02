@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS processos (
     origem VARCHAR(100) NOT NULL,
     unidade_atual VARCHAR(100) NOT NULL,
     status VARCHAR(50) NOT NULL,
-    data_prazo_final DATE
+    data_prazo_final DATE,
+    observacao VARCHAR(300)
 );
