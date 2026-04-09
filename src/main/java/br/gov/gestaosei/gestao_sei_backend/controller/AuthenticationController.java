@@ -3,6 +3,7 @@ package br.gov.gestaosei.gestao_sei_backend.controller;
 import br.gov.gestaosei.gestao_sei_backend.dto.AuthenticationDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.LoginResponseDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.RegisterDTO;
+import br.gov.gestaosei.gestao_sei_backend.dto.ResetPasswordDTO;
 import br.gov.gestaosei.gestao_sei_backend.exception.ErrorResponse;
 import br.gov.gestaosei.gestao_sei_backend.model.Role;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
@@ -142,6 +143,56 @@ public class AuthenticationController {
         Usuario newUser = new Usuario(data.login(), encryptedPassword, userRole);
 
         usuarioRepository.save(newUser);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(
+        summary = "Redefinir senha",
+        description = "Redefine a senha de um usuário informado pelo login"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Senha redefinida com sucesso"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Login não encontrado ou dados inválidos",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        )
+    })
+    public ResponseEntity resetPassword(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Dados para redefinir senha",
+                required = true,
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ResetPasswordDTO.class),
+                    examples = @ExampleObject(
+                        value = """
+                        {
+                          "login": "joao.silva",
+                          "novaSenha": "NovaSenha@123"
+                        }
+                        """
+                    )
+                )
+            )
+            @RequestBody @Valid ResetPasswordDTO data) {
+
+        Usuario usuario = usuarioRepository.findByLogin(data.login());
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuário não encontrado com o login: " + data.login());
+        }
+
+        String encryptedPassword = new BCryptPasswordEncoder().encode(data.novaSenha());
+        usuario.setSenha(encryptedPassword);
+        usuarioRepository.save(usuario);
 
         return ResponseEntity.ok().build();
     }

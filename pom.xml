@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.2.3</version>
+		<version>3.5.13</version>
 		<relativePath/>
 	</parent>
 
@@ -18,7 +18,7 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<springdoc.version>2.3.0</springdoc.version>
+		<springdoc.version>2.8.16</springdoc.version>
 	</properties>
 
 	<dependencies>
@@ -44,7 +44,7 @@
 		<dependency>
 			<groupId>com.auth0</groupId>
 			<artifactId>java-jwt</artifactId>
-			<version>4.4.0</version>
+			<version>4.5.1</version>
 		</dependency>
 
 		<!-- Lombok -->
@@ -65,7 +65,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.7.3</version>
+			<version>42.7.10</version>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -73,12 +73,17 @@
 		<dependency>
 			<groupId>net.sf.jasperreports</groupId>
 			<artifactId>jasperreports</artifactId>
-			<version>6.20.0</version>
+			<version>7.0.6</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>jasperreports-pdf</artifactId>
+			<version>7.0.6</version>
 		</dependency>
 		<dependency>
 			<groupId>net.sf.jasperreports</groupId>
 			<artifactId>jasperreports-fonts</artifactId>
-			<version>6.20.0</version>
+			<version>7.0.6</version>
 		</dependency>
 
 		<!-- Test -->
