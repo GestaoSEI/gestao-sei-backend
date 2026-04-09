@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface HistoricoProcessoRepository extends JpaRepository<HistoricoProcesso, Long> {
     List<HistoricoProcesso> findByProcessoIdOrderByDataAtualizacaoDesc(Long processoId);
+    boolean existsByUsuarioId(Long usuarioId);
 }

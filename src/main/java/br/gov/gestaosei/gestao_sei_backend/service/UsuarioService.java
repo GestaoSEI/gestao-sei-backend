@@ -1,7 +1,9 @@
 package br.gov.gestaosei.gestao_sei_backend.service;
 
+import br.gov.gestaosei.gestao_sei_backend.dto.AlterarSenhaDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.UsuarioDTO;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
+import br.gov.gestaosei.gestao_sei_backend.repository.HistoricoProcessoRepository;
 import br.gov.gestaosei.gestao_sei_backend.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,10 +17,12 @@ import java.util.stream.Collectors;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final HistoricoProcessoRepository historicoProcessoRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, HistoricoProcessoRepository historicoProcessoRepository) {
         this.usuarioRepository = usuarioRepository;
+        this.historicoProcessoRepository = historicoProcessoRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
@@ -76,9 +80,38 @@ public class UsuarioService {
 
     @Transactional
     public void deletar(Long id) {
-        // MÉTODO REMOVIDO: Não é permitido excluir usuários
-        // para manter a integridade do histórico de processos
-        throw new UnsupportedOperationException("Exclusão de usuários não é permitida para manter a integridade do histórico de processos.");
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
+
+        if (historicoProcessoRepository.existsByUsuarioId(id)) {
+            throw new IllegalStateException(
+                "Não é possível excluir o usuário '" + usuario.getLogin() +
+                "' pois ele possui registros no histórico de tramitação de processos."
+            );
+        }
+
+        usuarioRepository.delete(usuario);
+    }
+
+    @Transactional
+    public void alterarSenha(Long id, AlterarSenhaDTO dto, String loginAutenticado, boolean isAdmin) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
+
+        if (!isAdmin) {
+            if (!usuario.getLogin().equals(loginAutenticado)) {
+                throw new SecurityException("Você não tem permissão para alterar a senha de outro usuário.");
+            }
+            if (dto.senhaAtual() == null || dto.senhaAtual().isBlank()) {
+                throw new IllegalArgumentException("Senha atual é obrigatória.");
+            }
+            if (!passwordEncoder.matches(dto.senhaAtual(), usuario.getPassword())) {
+                throw new IllegalArgumentException("Senha atual incorreta.");
+            }
+        }
+
+        usuario.setSenha(passwordEncoder.encode(dto.novaSenha()));
+        usuarioRepository.save(usuario);
     }
 
     private UsuarioDTO toDTO(Usuario usuario) {

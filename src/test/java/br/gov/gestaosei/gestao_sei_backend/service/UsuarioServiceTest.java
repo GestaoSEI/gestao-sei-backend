@@ -1,8 +1,10 @@
 package br.gov.gestaosei.gestao_sei_backend.service;
 
+import br.gov.gestaosei.gestao_sei_backend.dto.AlterarSenhaDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.UsuarioDTO;
 import br.gov.gestaosei.gestao_sei_backend.model.Role;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
+import br.gov.gestaosei.gestao_sei_backend.repository.HistoricoProcessoRepository;
 import br.gov.gestaosei.gestao_sei_backend.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,9 @@ class UsuarioServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private HistoricoProcessoRepository historicoProcessoRepository;
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -114,8 +119,57 @@ class UsuarioServiceTest {
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao tentar deletar usuário")
+    @DisplayName("Deve deletar usuário sem histórico com sucesso")
     void testDeletarUsuario() {
-        assertThrows(UnsupportedOperationException.class, () -> usuarioService.deletar(1L));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioTeste));
+        when(historicoProcessoRepository.existsByUsuarioId(1L)).thenReturn(false);
+
+        assertDoesNotThrow(() -> usuarioService.deletar(1L));
+        verify(usuarioRepository).delete(usuarioTeste);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao deletar usuário com histórico")
+    void testDeletarUsuarioComHistorico() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioTeste));
+        when(historicoProcessoRepository.existsByUsuarioId(1L)).thenReturn(true);
+
+        assertThrows(IllegalStateException.class, () -> usuarioService.deletar(1L));
+        verify(usuarioRepository, never()).delete(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Deve alterar senha do próprio usuário com senha atual correta")
+    void testAlterarSenhaProprioUsuario() {
+        String senhaHash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("senha123");
+        usuarioTeste.setSenha(senhaHash);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioTeste));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioTeste);
+
+        AlterarSenhaDTO dto = new AlterarSenhaDTO("senha123", "novaSenha456");
+        assertDoesNotThrow(() -> usuarioService.alterarSenha(1L, dto, "testuser", false));
+        verify(usuarioRepository).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao alterar senha do próprio usuário com senha atual errada")
+    void testAlterarSenhaSenhaAtualErrada() {
+        String senhaHash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("senha123");
+        usuarioTeste.setSenha(senhaHash);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioTeste));
+
+        AlterarSenhaDTO dto = new AlterarSenhaDTO("senhaErrada", "novaSenha456");
+        assertThrows(IllegalArgumentException.class, () -> usuarioService.alterarSenha(1L, dto, "testuser", false));
+    }
+
+    @Test
+    @DisplayName("ADMIN deve alterar senha sem informar senha atual")
+    void testAlterarSenhaAdmin() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioTeste));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioTeste);
+
+        AlterarSenhaDTO dto = new AlterarSenhaDTO(null, "novaSenha456");
+        assertDoesNotThrow(() -> usuarioService.alterarSenha(1L, dto, "admin", true));
+        verify(usuarioRepository).save(any(Usuario.class));
     }
 }
