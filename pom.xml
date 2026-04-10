@@ -73,17 +73,24 @@
 		<dependency>
 			<groupId>net.sf.jasperreports</groupId>
 			<artifactId>jasperreports</artifactId>
-			<version>7.0.6</version>
-		</dependency>
-		<dependency>
-			<groupId>net.sf.jasperreports</groupId>
-			<artifactId>jasperreports-pdf</artifactId>
-			<version>7.0.6</version>
+			<version>6.20.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.lowagie</groupId>
+					<artifactId>itext</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>net.sf.jasperreports</groupId>
 			<artifactId>jasperreports-fonts</artifactId>
-			<version>7.0.6</version>
+			<version>6.20.0</version>
+		</dependency>
+		<!-- openpdf é o fork compatível do iText 2.1.x com mesmos pacotes (com.lowagie.text.*) -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>1.3.30</version>
 		</dependency>
 
 		<!-- Test -->

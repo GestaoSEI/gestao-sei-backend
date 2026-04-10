@@ -29,7 +29,7 @@ public class AgendamentoService {
 
         for (Processo processo : processosVencidos) {
             if (!isStatusFinal(processo.getStatus())) {
-                processo.setStatus("EXPIRADO");
+                processo.setStatus("Expirado");
                 processoRepository.save(processo);
                 System.out.println("Processo " + processo.getNumeroProcesso() + " atualizado para EXPIRADO automaticamente.");
             }
@@ -40,6 +40,6 @@ public class AgendamentoService {
         if (status == null) return false;
         return "Concluído".equalsIgnoreCase(status) || 
                "Arquivado".equalsIgnoreCase(status) || 
-               "EXPIRADO".equalsIgnoreCase(status);
+               "Expirado".equalsIgnoreCase(status);
     }
 }

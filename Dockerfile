@@ -14,7 +14,7 @@ COPY src ./src
 RUN mvn package
 
 # Estágio 2: Criação da imagem final de execução
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jdk-alpine
 
 # Instala fontes necessárias para o JasperReports
 RUN apk add --no-cache fontconfig ttf-dejavu

@@ -4,9 +4,7 @@ import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoDTO;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -17,28 +15,30 @@ import java.util.Map;
 @Service
 public class RelatorioService {
 
-    public byte[] gerarRelatorioProcessos(List<ProcessoDTO> processos) throws JRException, FileNotFoundException {
-        // Carrega o arquivo .jrxml
-        InputStream inputStream = getClass().getResourceAsStream("/reports/processos.jrxml");
-        if (inputStream == null) {
-            throw new FileNotFoundException("Arquivo de relatório não encontrado: /reports/processos.jrxml");
+    private volatile JasperReport jasperReport;
+
+    private JasperReport getCompiledReport() throws JRException, FileNotFoundException {
+        if (jasperReport == null) {
+            synchronized (this) {
+                if (jasperReport == null) {
+                    InputStream inputStream = getClass().getResourceAsStream("/reports/processos.jrxml");
+                    if (inputStream == null) {
+                        throw new FileNotFoundException("Arquivo de relatório não encontrado: /reports/processos.jrxml");
+                    }
+                    jasperReport = JasperCompileManager.compileReport(inputStream);
+                }
+            }
         }
-        
-        JasperReport jasperReport = JasperCompileManager.compileReport(inputStream);
+        return jasperReport;
+    }
 
-        // Cria o datasource com a lista de processos
+    public byte[] gerarRelatorioProcessos(List<ProcessoDTO> processos) throws JRException, FileNotFoundException {
+        JasperReport report = getCompiledReport();
         JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(processos);
-
-        // Parâmetros do relatório (se houver)
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("createdBy", "Sistema SEI");
-        // Define o Locale para pt_BR para garantir formatação de data correta
         parameters.put(JRParameter.REPORT_LOCALE, new Locale("pt", "BR"));
-
-        // Preenche o relatório
-        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
-
-        // Exporta para PDF
+        JasperPrint jasperPrint = JasperFillManager.fillReport(report, parameters, dataSource);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
 }
