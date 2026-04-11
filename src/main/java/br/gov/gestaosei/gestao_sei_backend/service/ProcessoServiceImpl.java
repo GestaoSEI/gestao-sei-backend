@@ -37,29 +37,40 @@ public class ProcessoServiceImpl implements ProcessoService {
             return listarTodos();
         }
 
-        List<Processo> processos;
         LocalDate hoje = LocalDate.now();
 
-        // Se houver datas ou unidade, usa a query personalizada que suporta LIKE na unidade
-        if (filtro.getDataInicio() != null || filtro.getDataFim() != null || filtro.getUnidadeAtual() != null) {
-            processos = processoRepository.findByUnidadeAndPrazoBetween(
-                    filtro.getUnidadeAtual(),
-                    filtro.getDataInicio(),
-                    filtro.getDataFim()
-            );
-            
-            // Se também houver status, filtra em memória (já que a query acima não filtra status)
-            if (filtro.getStatus() != null) {
-                processos = processos.stream()
-                        .filter(p -> p.getStatus().equalsIgnoreCase(filtro.getStatus()))
-                        .collect(Collectors.toList());
-            }
-        } else if (filtro.getStatus() != null) {
-            processos = processoRepository.findByStatus(filtro.getStatus());
-        } else if (Boolean.TRUE.equals(filtro.getPrazoExpirado())) {
-            processos = processoRepository.findByDataPrazoFinalBefore(hoje);
-        } else {
-            processos = processoRepository.findAll();
+        // Parte de todos e aplica cada filtro de forma acumulativa
+        List<Processo> processos = processoRepository.findAll();
+
+        if (filtro.getStatus() != null && !filtro.getStatus().isBlank()) {
+            processos = processos.stream()
+                    .filter(p -> p.getStatus() != null && p.getStatus().equalsIgnoreCase(filtro.getStatus()))
+                    .collect(Collectors.toList());
+        }
+
+        if (filtro.getUnidadeAtual() != null && !filtro.getUnidadeAtual().isBlank()) {
+            String unidadeLower = filtro.getUnidadeAtual().toLowerCase();
+            processos = processos.stream()
+                    .filter(p -> p.getUnidadeAtual() != null && p.getUnidadeAtual().toLowerCase().contains(unidadeLower))
+                    .collect(Collectors.toList());
+        }
+
+        if (Boolean.TRUE.equals(filtro.getPrazoExpirado())) {
+            processos = processos.stream()
+                    .filter(p -> p.getDataPrazoFinal() != null && p.getDataPrazoFinal().isBefore(hoje))
+                    .collect(Collectors.toList());
+        }
+
+        if (filtro.getDataInicio() != null) {
+            processos = processos.stream()
+                    .filter(p -> p.getDataPrazoFinal() != null && !p.getDataPrazoFinal().isBefore(filtro.getDataInicio()))
+                    .collect(Collectors.toList());
+        }
+
+        if (filtro.getDataFim() != null) {
+            processos = processos.stream()
+                    .filter(p -> p.getDataPrazoFinal() != null && !p.getDataPrazoFinal().isAfter(filtro.getDataFim()))
+                    .collect(Collectors.toList());
         }
 
         return processos.stream()

@@ -5,6 +5,7 @@ import br.gov.gestaosei.gestao_sei_backend.dto.ErrorResponse;
 import br.gov.gestaosei.gestao_sei_backend.dto.UsuarioDTO;
 import br.gov.gestaosei.gestao_sei_backend.model.Role;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
+import br.gov.gestaosei.gestao_sei_backend.service.RelatorioService;
 import br.gov.gestaosei.gestao_sei_backend.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,7 +17,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,6 +34,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private RelatorioService relatorioService;
 
     @GetMapping
     @Operation(
@@ -269,5 +275,20 @@ public class UsuarioController {
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         usuarioService.alterarSenha(id, dto, currentUser.getLogin(), isAdmin);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/relatorio")
+    @Operation(summary = "Gerar relatório PDF de usuários", description = "Gera um relatório PDF com a lista de todos os usuários cadastrados")
+    public ResponseEntity<byte[]> gerarRelatorio() {
+        try {
+            List<UsuarioDTO> usuarios = usuarioService.listarTodos();
+            byte[] pdfBytes = relatorioService.gerarRelatorioUsuarios(usuarios);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "relatorio_usuarios.pdf");
+            return ResponseEntity.ok().headers(headers).body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
