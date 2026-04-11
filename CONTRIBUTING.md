@@ -179,4 +179,4 @@ Abra uma [Issue](https://github.com/GestaoSEI/gestao-sei-backend/issues) com o l
 
 ---
 
-Made with ❤️ by [GestaoSEI](https://github.com/GestaoSEI)
+Made with ❤️ by Gilvaneide Medeiros
