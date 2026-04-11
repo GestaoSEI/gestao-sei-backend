@@ -118,7 +118,7 @@ Para rodar localmente:
 
 ## 🤝 Contribuindo
 
-Este é um projeto **Open Source**. Sinta-se à vontade para abrir Issues ou enviar Pull Requests na nossa organização [GestaoSEI](https://github.com/GestaoSEI).
+Este é um projeto **Open Source**. Leia o [Guia de Contribuição](CONTRIBUTING.md) para saber como configurar o ambiente, seguir os padrões do projeto e enviar um Pull Request.
 
 ## 📄 Licença
 
