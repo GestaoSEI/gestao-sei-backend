@@ -54,7 +54,7 @@ public class RelatorioService {
         JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(processos);
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("createdBy", "Sistema SEI");
-        parameters.put(JRParameter.REPORT_LOCALE, new Locale("pt", "BR"));
+        parameters.put(JRParameter.REPORT_LOCALE, Locale.of("pt", "BR"));
         JasperPrint jasperPrint = JasperFillManager.fillReport(report, parameters, dataSource);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
@@ -64,7 +64,7 @@ public class RelatorioService {
         JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(usuarios);
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("createdBy", "Sistema SEI");
-        parameters.put(JRParameter.REPORT_LOCALE, new Locale("pt", "BR"));
+        parameters.put(JRParameter.REPORT_LOCALE, Locale.of("pt", "BR"));
         JasperPrint jasperPrint = JasperFillManager.fillReport(report, parameters, dataSource);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }

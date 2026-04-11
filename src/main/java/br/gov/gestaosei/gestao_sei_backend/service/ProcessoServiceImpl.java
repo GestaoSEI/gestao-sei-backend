@@ -214,13 +214,6 @@ public class ProcessoServiceImpl implements ProcessoService {
         return "Em andamento".equalsIgnoreCase(status);
     }
 
-    private boolean isStatusFinal(String status) {
-        if (status == null) return false;
-        return "Concluído".equalsIgnoreCase(status) ||
-               "Encerrado".equalsIgnoreCase(status) ||
-               "Expirado".equalsIgnoreCase(status);
-    }
-
     private Processo toEntity(ProcessoDTO dto) {
         Processo processo = new Processo();
         BeanUtils.copyProperties(dto, processo);

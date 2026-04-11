@@ -17,11 +17,11 @@ public class UsuarioDTO {
     @Schema(description = "ID do usuário", example = "1")
     private Long id;
     
-    @Schema(description = "Login do usuário", example = "joao.silva", required = true)
+    @Schema(description = "Login do usuário", example = "joao.silva", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Login é obrigatório")
     private String login;
     
-    @Schema(description = "Perfil do usuário", example = "USER", required = true)
+    @Schema(description = "Perfil do usuário", example = "USER", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Perfil é obrigatório")
     private Role role;
 }

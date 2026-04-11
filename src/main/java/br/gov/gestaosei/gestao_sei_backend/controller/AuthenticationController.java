@@ -72,7 +72,7 @@ public class AuthenticationController {
             )
         )
     })
-    public ResponseEntity login(
+    public ResponseEntity<LoginResponseDTO> login(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Credenciais de login",
                 required = true,
@@ -117,7 +117,7 @@ public class AuthenticationController {
             )
         )
     })
-    public ResponseEntity register(
+    public ResponseEntity<Void> register(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Dados do novo usuário",
                 required = true,
@@ -166,7 +166,7 @@ public class AuthenticationController {
             )
         )
     })
-    public ResponseEntity resetPassword(
+    public ResponseEntity<Void> resetPassword(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Dados para redefinir senha",
                 required = true,
