@@ -154,4 +154,28 @@ class ProcessoServiceTest {
 
         assertFalse(resultado.getAlertaUrgencia());
     }
+
+    @Test
+    void toDTO_QuandoStatusFinalComPrazoCurto_NaoDeveAtivarAlertaUrgencia() {
+        processo.setDataPrazoFinal(LocalDate.now().plusDays(2));
+        processo.setStatus("Concluído");
+        processoDTO.setStatus("Concluído");
+        when(processoRepository.save(any(Processo.class))).thenReturn(processo);
+
+        ProcessoDTO resultado = processoService.salvar(processoDTO);
+
+        assertFalse(resultado.getAlertaUrgencia());
+    }
+
+    @Test
+    void toDTO_QuandoStatusRespondidoComPrazoCurto_NaoDeveAtivarAlertaUrgencia() {
+        processo.setDataPrazoFinal(LocalDate.now().plusDays(2));
+        processo.setStatus("Respondido");
+        processoDTO.setStatus("Respondido");
+        when(processoRepository.save(any(Processo.class))).thenReturn(processo);
+
+        ProcessoDTO resultado = processoService.salvar(processoDTO);
+
+        assertFalse(resultado.getAlertaUrgencia());
+    }
 }

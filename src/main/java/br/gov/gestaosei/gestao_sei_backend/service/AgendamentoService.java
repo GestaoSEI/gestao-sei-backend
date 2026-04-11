@@ -39,7 +39,7 @@ public class AgendamentoService {
     private boolean isStatusFinal(String status) {
         if (status == null) return false;
         return "Concluído".equalsIgnoreCase(status) || 
-               "Arquivado".equalsIgnoreCase(status) || 
+               "Encerrado".equalsIgnoreCase(status) || 
                "Expirado".equalsIgnoreCase(status);
     }
 }

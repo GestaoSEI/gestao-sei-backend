@@ -186,8 +186,8 @@ public class ProcessoServiceImpl implements ProcessoService {
         ProcessoDTO dto = new ProcessoDTO();
         BeanUtils.copyProperties(processo, dto);
         
-        // Calcula o alerta de prazo
-        if (processo.getDataPrazoFinal() != null) {
+        // Calcula o alerta de prazo apenas para processos "Em andamento"
+        if (processo.getDataPrazoFinal() != null && isStatusAtivo(processo.getStatus())) {
             long diasParaVencer = ChronoUnit.DAYS.between(LocalDate.now(), processo.getDataPrazoFinal());
             // Alerta se vencer em 5 dias ou menos (incluindo vencidos)
             dto.setAlertaUrgencia(diasParaVencer <= 5);
@@ -196,6 +196,18 @@ public class ProcessoServiceImpl implements ProcessoService {
         }
         
         return dto;
+    }
+
+    private boolean isStatusAtivo(String status) {
+        if (status == null) return false;
+        return "Em andamento".equalsIgnoreCase(status);
+    }
+
+    private boolean isStatusFinal(String status) {
+        if (status == null) return false;
+        return "Concluído".equalsIgnoreCase(status) ||
+               "Encerrado".equalsIgnoreCase(status) ||
+               "Expirado".equalsIgnoreCase(status);
     }
 
     private Processo toEntity(ProcessoDTO dto) {
