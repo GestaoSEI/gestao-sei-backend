@@ -106,7 +106,7 @@ Para verificar a cobertura:
 
 Usamos o padrão [Conventional Commits](https://www.conventionalcommits.org/pt-br/):
 
-```
+```text
 <tipo>: <descrição curta em português>
 ```
 
@@ -122,7 +122,7 @@ Usamos o padrão [Conventional Commits](https://www.conventionalcommits.org/pt-b
 
 **Exemplos:**
 
-```
+```text
 feat: adicionar filtro por unidade no endpoint de processos
 fix: corrigir validação de prazo nulo ao criar processo
 test: adicionar testes para exclusão de usuário com histórico
