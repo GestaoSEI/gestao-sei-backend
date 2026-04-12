@@ -1,5 +1,5 @@
 # Estágio 1: Build da aplicação com Maven
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 # Define o diretório de trabalho
 WORKDIR /app
@@ -14,10 +14,10 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 mvn package
 
 # Estágio 2: Criação da imagem final de execução
-FROM eclipse-temurin:21-jdk-alpine
+FROM eclipse-temurin:21-jre-noble
 
 # Instala fontes necessárias para o JasperReports
-RUN apk add --no-cache fontconfig ttf-dejavu
+RUN apt-get update && apt-get install -y --no-install-recommends fontconfig fonts-dejavu && rm -rf /var/lib/apt/lists/*
 
 # Define o diretório de trabalho
 WORKDIR /app
