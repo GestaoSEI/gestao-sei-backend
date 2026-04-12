@@ -33,6 +33,9 @@ public class Processo {
     @Column(columnDefinition = "TEXT")
     private String observacao;
 
+    @Column(nullable = false)
+    private boolean duplicata = false;
+
     public Long getId() {
         return id;
     }
@@ -95,5 +98,13 @@ public class Processo {
 
     public void setObservacao(String observacao) {
         this.observacao = observacao;
+    }
+
+    public boolean isDuplicata() {
+        return duplicata;
+    }
+
+    public void setDuplicata(boolean duplicata) {
+        this.duplicata = duplicata;
     }
 }

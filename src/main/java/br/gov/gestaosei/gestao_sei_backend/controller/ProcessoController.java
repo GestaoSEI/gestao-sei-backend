@@ -1,6 +1,7 @@
 package br.gov.gestaosei.gestao_sei_backend.controller;
 
 import br.gov.gestaosei.gestao_sei_backend.dto.HistoricoProcessoDTO;
+import br.gov.gestaosei.gestao_sei_backend.dto.ImportacaoResultadoDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoFiltroDTO;
 import br.gov.gestaosei.gestao_sei_backend.service.ProcessoService;
@@ -16,8 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -114,6 +117,20 @@ public class ProcessoController {
     public ResponseEntity<List<HistoricoProcessoDTO>> getHistoricoPorProcessoId(
             @Parameter(description = "ID do processo") @PathVariable Long processoId) {
         return ResponseEntity.ok(processoService.getHistoricoPorProcessoId(processoId));
+    }
+
+    @Operation(summary = "Importar processos via CSV",
+            description = "Importa processos de um arquivo CSV no formato do modelo. Linhas com número já existente são marcadas como duplicata para revisão. Coluna obrigatória: NumeroProcesso, TipoProcesso, Origem, UnidadeAtual, Status, DataPrazoFinal (AAAA-MM-DD). Observacao é opcional.")
+    @ApiResponse(responseCode = "200", description = "Importação processada — verifique o resultado para detalhes")
+    @PostMapping(value = "/importar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImportacaoResultadoDTO> importarCsv(
+            @Parameter(description = "Arquivo CSV com os processos a importar") @RequestParam("file") MultipartFile file) {
+        try {
+            ImportacaoResultadoDTO resultado = processoService.importarCsv(file);
+            return ResponseEntity.ok(resultado);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @Operation(summary = "Gerar relatório PDF",

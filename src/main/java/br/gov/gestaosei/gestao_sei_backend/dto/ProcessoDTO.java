@@ -43,6 +43,9 @@ public class ProcessoDTO {
     @Schema(description = "Indica se o prazo está próximo do vencimento (5 dias ou menos)", example = "true")
     private Boolean alertaUrgencia = Boolean.FALSE;
 
+    @Schema(description = "Indica se o processo foi identificado como duplicata durante importação CSV", example = "false")
+    private Boolean duplicata = Boolean.FALSE;
+
     //Getters e Setters
     public Long getId() {
         return id;
@@ -114,5 +117,13 @@ public class ProcessoDTO {
 
     public void setAlertaUrgencia(Boolean alertaUrgencia) {
         this.alertaUrgencia = alertaUrgencia;
+    }
+
+    public Boolean getDuplicata() {
+        return duplicata;
+    }
+
+    public void setDuplicata(Boolean duplicata) {
+        this.duplicata = duplicata;
     }
 }
