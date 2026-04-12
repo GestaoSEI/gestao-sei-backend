@@ -25,7 +25,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -241,12 +240,8 @@ public class ProcessoServiceImpl implements ProcessoService {
 
                 String numero = campos[0].trim();
                 try {
-                    Optional<Processo> existente = processoRepository.findByNumeroProcesso(numero);
-                    if (existente.isPresent()) {
-                        // Marca o processo existente como duplicata para revisão
-                        Processo p = existente.get();
-                        p.setDuplicata(true);
-                        processoRepository.save(p);
+                    if (processoRepository.findByNumeroProcesso(numero).isPresent()) {
+                        // Número já existe no banco: linha do CSV é duplicata; ignora sem modificar o registro original
                         duplicatas++;
                     } else {
                         Processo p = new Processo();
