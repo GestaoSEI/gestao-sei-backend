@@ -4,14 +4,14 @@ FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 # Define o diretório de trabalho
 WORKDIR /app
 
-# Copia o arquivo pom.xml e baixa as dependências
+# Copia o arquivo pom.xml e baixa as dependências (cache de deps entre builds)
 COPY pom.xml .
-RUN mvn dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline
 
 # Copia o código-fonte e compila a aplicação
 COPY src ./src
-# Executa os testes e gera o pacote JAR
-RUN mvn package
+# Executa os testes e gera o pacote JAR (reutiliza cache Maven)
+RUN --mount=type=cache,target=/root/.m2 mvn package
 
 # Estágio 2: Criação da imagem final de execução
 FROM eclipse-temurin:21-jdk-alpine
