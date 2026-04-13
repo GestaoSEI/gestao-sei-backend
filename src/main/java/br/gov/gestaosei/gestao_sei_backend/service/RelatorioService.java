@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,7 +52,11 @@ public class RelatorioService {
 
     public byte[] gerarRelatorioProcessos(List<ProcessoDTO> processos) throws JRException, FileNotFoundException {
         JasperReport report = getCompiledReportProcessos();
-        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(processos);
+        List<ProcessoDTO> processosOrdenados = processos.stream()
+            .sorted(Comparator.comparing(ProcessoDTO::getDataPrazoFinal,
+                Comparator.nullsLast(Comparator.reverseOrder())))
+            .toList();
+        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(processosOrdenados);
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("createdBy", "Sistema SEI");
         parameters.put(JRParameter.REPORT_LOCALE, Locale.of("pt", "BR"));
