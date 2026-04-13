@@ -129,6 +129,9 @@ public class ProcessoController {
         try {
             ImportacaoResultadoDTO resultado = processoService.importarCsv(file);
             return ResponseEntity.ok(resultado);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ImportacaoResultadoDTO(0, 0, 1, List.of(e.getMessage())));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

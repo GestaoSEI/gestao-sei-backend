@@ -227,6 +227,10 @@ public class ProcessoServiceImpl implements ProcessoService {
     @Override
     @Transactional
     public ImportacaoResultadoDTO importarCsv(MultipartFile file) throws IOException {
+        if (processoRepository.count() > 0) {
+            throw new IllegalStateException("Importação bloqueada: já existem processos cadastrados. Limpe o banco de dados para realizar nova importação inicial.");
+        }
+
         int importados = 0;
         int duplicatas = 0;
         int erros = 0;
