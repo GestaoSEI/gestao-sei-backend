@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -153,6 +154,11 @@ public class ProcessoController {
                 ProcessoFiltroDTO filtro = new ProcessoFiltroDTO(status, unidade, prazoExpirado, dataInicio, dataFim);
                 processos = processoService.filtrar(filtro);
             }
+
+            processos.sort(
+                    Comparator.comparing(ProcessoDTO::getDataPrazoFinal,
+                                    Comparator.nullsLast(Comparator.reverseOrder()))
+            );
 
             byte[] pdfBytes = relatorioService.gerarRelatorioProcessos(processos);
 
