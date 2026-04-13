@@ -59,3 +59,7 @@ replay_pid*
 
 # Auditoria operacional local (não versionar)
 data/auditoria_*.csv
+
+# CSVs sensíveis da unidade (não versionar)
+*Controle processos SEI*.csv
+*controle processos sei*.csv
