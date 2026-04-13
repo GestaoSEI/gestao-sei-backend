@@ -19,12 +19,24 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,8 +62,9 @@ public class ProcessoServiceImpl implements ProcessoService {
         List<Processo> processos = processoRepository.findAll();
 
         if (filtro.getStatus() != null && !filtro.getStatus().isBlank()) {
+            String statusNormalizado = normalizarStatus(filtro.getStatus());
             processos = processos.stream()
-                    .filter(p -> p.getStatus() != null && p.getStatus().equalsIgnoreCase(filtro.getStatus()))
+                .filter(p -> p.getStatus() != null && normalizarStatus(p.getStatus()).equalsIgnoreCase(statusNormalizado))
                     .collect(Collectors.toList());
         }
 
@@ -91,7 +104,9 @@ public class ProcessoServiceImpl implements ProcessoService {
         if (keyword == null || keyword.trim().isEmpty()) {
             return listarTodos();
         }
-        return processoRepository.searchByKeyword(keyword).stream()
+        String keywordNormalizada = keyword.trim().toLowerCase();
+        return processoRepository.findAll().stream()
+                .filter(p -> contemPalavraChave(p, keywordNormalizada))
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -101,7 +116,7 @@ public class ProcessoServiceImpl implements ProcessoService {
     public List<HistoricoProcessoDTO> getHistoricoPorProcessoId(Long processoId) {
         return historicoProcessoRepository.findByProcessoIdOrderByDataAtualizacaoDesc(processoId)
                 .stream()
-                .map(HistoricoProcessoDTO::new)
+                .map(this::toHistoricoDTO)
                 .collect(Collectors.toList());
     }
 
@@ -141,7 +156,7 @@ public class ProcessoServiceImpl implements ProcessoService {
     @Override
     @Transactional
     public ProcessoDTO atualizarPorNumero(String numeroProcesso, ProcessoDTO processoDTO) {
-        Processo processoExistente = processoRepository.findByNumeroProcesso(numeroProcesso)
+        Processo processoExistente = buscarProcessoPorNumeroFlex(numeroProcesso)
                 .orElseThrow(() -> new EntityNotFoundException("Processo não encontrado com o número: " + numeroProcesso));
 
         return atualizarProcessoExistente(processoExistente, processoDTO);
@@ -149,8 +164,10 @@ public class ProcessoServiceImpl implements ProcessoService {
 
     private ProcessoDTO atualizarProcessoExistente(Processo processoExistente, ProcessoDTO processoDTO) {
         // Guarda os valores antigos para comparação
-        String statusAnterior = processoExistente.getStatus();
+        String statusAnterior = normalizarStatus(processoExistente.getStatus());
         String unidadeAnterior = processoExistente.getUnidadeAtual();
+
+        processoDTO.setStatus(normalizarStatus(processoDTO.getStatus()));
 
         // Atualiza o processo com os novos dados
         // Preserva o ID original e o flag de duplicata
@@ -166,7 +183,7 @@ public class ProcessoServiceImpl implements ProcessoService {
         Usuario usuarioLogado = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         // Compara e registra o histórico
-        boolean statusMudou = !Objects.equals(statusAnterior, processoAtualizado.getStatus());
+        boolean statusMudou = !Objects.equals(statusAnterior, normalizarStatus(processoAtualizado.getStatus()));
         boolean unidadeMudou = !Objects.equals(unidadeAnterior, processoAtualizado.getUnidadeAtual());
 
         if (statusMudou || unidadeMudou) {
@@ -174,7 +191,7 @@ public class ProcessoServiceImpl implements ProcessoService {
                     processoAtualizado,
                     usuarioLogado,
                     statusMudou ? statusAnterior : null,
-                    statusMudou ? processoAtualizado.getStatus() : null,
+                    statusMudou ? normalizarStatus(processoAtualizado.getStatus()) : null,
                     unidadeMudou ? unidadeAnterior : null,
                     unidadeMudou ? processoAtualizado.getUnidadeAtual() : null,
                     processoDTO.getObservacao() // Usamos a observação do DTO como a "observação da mudança"
@@ -199,7 +216,7 @@ public class ProcessoServiceImpl implements ProcessoService {
     @Override
     @Transactional
     public void deletarPorNumero(String numeroProcesso) {
-        Processo processo = processoRepository.findByNumeroProcesso(numeroProcesso)
+        Processo processo = buscarProcessoPorNumeroFlex(numeroProcesso)
                 .orElseThrow(() -> new EntityNotFoundException("Processo não encontrado com o número: " + numeroProcesso));
         if (!processo.isDuplicata()) {
             throw new IllegalArgumentException("O processo só pode ser excluído se estiver marcado como duplicata.");
@@ -214,48 +231,90 @@ public class ProcessoServiceImpl implements ProcessoService {
         int duplicatas = 0;
         int erros = 0;
         List<String> mensagensErro = new ArrayList<>();
+        DateTimeFormatter formatterBr = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String conteudoCsv = decodificarConteudoCsv(file.getBytes());
 
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new StringReader(conteudoCsv))) {
 
             String linha;
             boolean primeiraLinha = true;
+            char delimitador = ',';
+            Map<String, Integer> indiceCabecalho = new HashMap<>();
             int numeroLinha = 0;
 
             while ((linha = reader.readLine()) != null) {
                 numeroLinha++;
                 if (primeiraLinha) {
+                    delimitador = detectarDelimitador(linha);
+                    String[] cabecalho = linha.split(String.valueOf(delimitador), -1);
+                    for (int i = 0; i < cabecalho.length; i++) {
+                        indiceCabecalho.put(normalizarCabecalho(cabecalho[i]), i);
+                    }
                     primeiraLinha = false;
                     continue; // Pula o cabeçalho
                 }
                 if (linha.isBlank()) continue;
 
-                // Limita a 7 campos para preservar vírgulas na observação
-                String[] campos = linha.split(",", 7);
+                String[] campos = linha.split(String.valueOf(delimitador), -1);
                 if (campos.length < 6) {
                     erros++;
-                    mensagensErro.add("Linha " + numeroLinha + ": formato inválido (mínimo 6 campos esperados).");
+                    mensagensErro.add("Linha " + numeroLinha + ": formato inválido (mínimo 6 campos esperados; delimitador esperado: '" + delimitador + "').");
                     continue;
                 }
 
-                String numero = campos[0].trim();
+                if (linhaSemConteudo(campos)) {
+                    continue;
+                }
+
+                int idxNumero = obterIndice(indiceCabecalho, "numeroprocesso", 0);
+                int idxTipo = obterIndice(indiceCabecalho, "tipoprocesso", 1);
+                int idxOrigem = obterIndice(indiceCabecalho, "origem", 2);
+                int idxUnidade = obterIndice(indiceCabecalho, "unidadeatual", 3);
+                int idxStatus = obterIndice(indiceCabecalho, "status", 4);
+                int idxDataPrazo = obterIndice(indiceCabecalho, "dataprazofinal", 5);
+                int idxObservacao = obterIndice(indiceCabecalho, "observacao", 6);
+
+                String numero = normalizarNumeroProcesso(valorCampo(campos, idxNumero));
+                String tipoProcesso = valorCampo(campos, idxTipo);
+                String origem = valorCampo(campos, idxOrigem);
+                String unidadeAtual = valorCampo(campos, idxUnidade);
+                String status = normalizarStatus(valorCampo(campos, idxStatus));
+                String dataPrazo = valorCampo(campos, idxDataPrazo);
+                String observacao = valorCampo(campos, idxObservacao);
                 try {
-                    if (processoRepository.findByNumeroProcesso(numero).isPresent()) {
-                        // Número já existe no banco: linha do CSV é duplicata; ignora sem modificar o registro original
+                    if (numero.isBlank()) {
+                        throw new IllegalArgumentException("número do processo vazio");
+                    }
+                    Optional<Processo> existenteOpt = buscarProcessoPorNumeroFlex(numero);
+                    if (existenteOpt.isPresent()) {
+                        // Número já existe no banco: conta como duplicata, mas atualiza dados válidos para corrigir texto/campos antigos.
+                        Processo existente = existenteOpt.get();
+                        boolean alterou = atualizarProcessoComDadosCsv(
+                                existente,
+                                tipoProcesso,
+                                origem,
+                                unidadeAtual,
+                                status,
+                                dataPrazo,
+                                observacao,
+                                formatterBr
+                        );
+                        if (alterou) {
+                            processoRepository.save(existente);
+                        }
                         duplicatas++;
                     } else {
                         Processo p = new Processo();
                         p.setNumeroProcesso(numero);
-                        p.setTipoProcesso(campos[1].trim());
-                        p.setOrigem(campos[2].trim());
-                        p.setUnidadeAtual(campos[3].trim());
-                        p.setStatus(campos[4].trim());
-                        String dataPrazo = campos[5].trim();
+                        p.setTipoProcesso(tipoProcesso);
+                        p.setOrigem(origem);
+                        p.setUnidadeAtual(unidadeAtual);
+                        p.setStatus(status);
                         if (!dataPrazo.isBlank()) {
-                            p.setDataPrazoFinal(LocalDate.parse(dataPrazo));
+                            p.setDataPrazoFinal(parseData(dataPrazo, formatterBr));
                         }
-                        if (campos.length == 7 && !campos[6].trim().isBlank()) {
-                            p.setObservacao(campos[6].trim());
+                        if (!observacao.isBlank()) {
+                            p.setObservacao(observacao);
                         }
                         processoRepository.save(p);
                         importados++;
@@ -269,9 +328,189 @@ public class ProcessoServiceImpl implements ProcessoService {
         return new ImportacaoResultadoDTO(importados, duplicatas, erros, mensagensErro);
     }
 
+    private char detectarDelimitador(String cabecalho) {
+        if (cabecalho == null) return ',';
+        String semBom = cabecalho.replace("\uFEFF", "");
+        int qtdPontoVirgula = semBom.length() - semBom.replace(";", "").length();
+        int qtdVirgula = semBom.length() - semBom.replace(",", "").length();
+        return qtdPontoVirgula > qtdVirgula ? ';' : ',';
+    }
+
+    private String normalizarCabecalho(String valor) {
+        String semBom = valor == null ? "" : valor.replace("\uFEFF", "").trim().toLowerCase();
+        return Normalizer.normalize(semBom, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("[^a-z0-9]", "");
+    }
+
+    private int obterIndice(Map<String, Integer> cabecalho, String nomeCampo, int fallback) {
+        return cabecalho.getOrDefault(nomeCampo, fallback);
+    }
+
+    private String valorCampo(String[] campos, int indice) {
+        if (indice < 0 || indice >= campos.length) {
+            return "";
+        }
+        if (campos[indice] == null) {
+            return "";
+        }
+        return campos[indice].replace('\u00A0', ' ').trim();
+    }
+
+    private String normalizarNumeroProcesso(String numeroBruto) {
+        if (numeroBruto == null) return "";
+        String originalLimpo = numeroBruto
+                .replace('\u00A0', ' ')
+                .replace("�", "")
+                .trim();
+
+        String limpo = originalLimpo;
+        limpo = limpo.replaceAll("\\s+", "");
+        limpo = limpo.replaceAll("[^0-9./-]", "");
+
+        // Ex.: 60242021/0008379-6 -> 6024.2021/0008379-6
+        limpo = limpo.replaceAll("^(\\d{4})(\\d{4})/(\\d{7})-(\\d)$", "$1.$2/$3-$4");
+        // Ex.: 6018.2022-0030428-7 -> 6018.2022/0030428-7
+        limpo = limpo.replaceAll("^(\\d{4}\\.\\d{4})-(\\d{7})-(\\d)$", "$1/$2-$3");
+
+        if (limpo.matches("^[0-9]{4}\\.[0-9]{4}/[0-9]{7}-[0-9]$")) {
+            return limpo;
+        }
+
+        if (originalLimpo.matches("^[0-9]{4}\\.[0-9]{4}/[0-9]{7}-[0-9]$")) {
+            return originalLimpo;
+        }
+
+        return originalLimpo;
+    }
+
+    private Optional<Processo> buscarProcessoPorNumeroFlex(String numeroProcesso) {
+        Optional<Processo> exato = processoRepository.findByNumeroProcesso(numeroProcesso);
+        if (exato.isPresent()) {
+            return exato;
+        }
+
+        String normalizado = normalizarNumeroProcesso(numeroProcesso);
+        if (!normalizado.isBlank()) {
+            Optional<Processo> diretoNormalizado = processoRepository.findByNumeroProcesso(normalizado);
+            if (diretoNormalizado.isPresent()) {
+                return diretoNormalizado;
+            }
+
+            String chaveAlvo = chaveNumero(normalizado);
+            return processoRepository.findAll().stream()
+                    .filter(p -> !chaveAlvo.isBlank())
+                    .filter(p -> chaveAlvo.equals(chaveNumero(p.getNumeroProcesso())))
+                    .findFirst();
+        }
+
+        return Optional.empty();
+    }
+
+    private String chaveNumero(String numero) {
+        if (numero == null) {
+            return "";
+        }
+        return numero.replaceAll("\\D", "");
+    }
+
+    private LocalDate parseData(String data, DateTimeFormatter formatterBr) {
+        if (data.matches("^\\d{5}$")) {
+            // Excel serial date (base 1899-12-30).
+            return LocalDate.of(1899, 12, 30).plusDays(Long.parseLong(data));
+        }
+        try {
+            return LocalDate.parse(data);
+        } catch (DateTimeParseException e) {
+            return LocalDate.parse(data, formatterBr);
+        }
+    }
+
+    private boolean linhaSemConteudo(String[] campos) {
+        for (String campo : campos) {
+            if (campo != null && !campo.replace('\u00A0', ' ').trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean atualizarProcessoComDadosCsv(
+            Processo processo,
+            String tipoProcesso,
+            String origem,
+            String unidadeAtual,
+            String status,
+            String dataPrazo,
+            String observacao,
+            DateTimeFormatter formatterBr
+    ) {
+        boolean alterou = false;
+
+        alterou |= atualizarTextoNaoVazio(processo::getTipoProcesso, processo::setTipoProcesso, tipoProcesso);
+        alterou |= atualizarTextoNaoVazio(processo::getOrigem, processo::setOrigem, origem);
+        alterou |= atualizarTextoNaoVazio(processo::getUnidadeAtual, processo::setUnidadeAtual, unidadeAtual);
+        alterou |= atualizarTextoNaoVazio(
+            () -> normalizarStatus(processo.getStatus()),
+            processo::setStatus,
+            normalizarStatus(status)
+        );
+        alterou |= atualizarTextoNaoVazio(processo::getObservacao, processo::setObservacao, observacao);
+
+        if (!dataPrazo.isBlank()) {
+            LocalDate novaData = parseData(dataPrazo, formatterBr);
+            if (!Objects.equals(novaData, processo.getDataPrazoFinal())) {
+                processo.setDataPrazoFinal(novaData);
+                alterou = true;
+            }
+        }
+
+        return alterou;
+    }
+
+    private boolean atualizarTextoNaoVazio(java.util.function.Supplier<String> getter,
+                                            java.util.function.Consumer<String> setter,
+                                            String novoValor) {
+        if (novoValor == null || novoValor.isBlank()) {
+            return false;
+        }
+        String atual = getter.get();
+        if (!Objects.equals(atual, novoValor)) {
+            setter.accept(novoValor);
+            return true;
+        }
+        return false;
+    }
+
+    private String decodificarConteudoCsv(byte[] bytes) {
+        CharsetDecoder utf8Decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        try {
+            return utf8Decoder.decode(ByteBuffer.wrap(bytes)).toString();
+        } catch (CharacterCodingException e) {
+            return new String(bytes, Charset.forName("Windows-1252"));
+        }
+    }
+
+    private boolean contemPalavraChave(Processo processo, String keywordNormalizada) {
+        return contemTexto(processo.getNumeroProcesso(), keywordNormalizada)
+                || contemTexto(processo.getTipoProcesso(), keywordNormalizada)
+                || contemTexto(processo.getOrigem(), keywordNormalizada)
+                || contemTexto(processo.getUnidadeAtual(), keywordNormalizada)
+                || contemTexto(normalizarStatus(processo.getStatus()), keywordNormalizada)
+                || contemTexto(processo.getObservacao(), keywordNormalizada);
+    }
+
+    private boolean contemTexto(String valor, String keywordNormalizada) {
+        return valor != null && valor.toLowerCase().contains(keywordNormalizada);
+    }
+
     private ProcessoDTO toDTO(Processo processo) {
         ProcessoDTO dto = new ProcessoDTO();
         BeanUtils.copyProperties(processo, dto);
+        dto.setNumeroProcesso(normalizarNumeroProcesso(dto.getNumeroProcesso()));
+        dto.setStatus(normalizarStatus(dto.getStatus()));
         
         // Calcula o alerta de prazo apenas para processos "Em andamento"
         if (processo.getDataPrazoFinal() != null && isStatusAtivo(processo.getStatus())) {
@@ -286,6 +525,7 @@ public class ProcessoServiceImpl implements ProcessoService {
     }
 
     private boolean isStatusAtivo(String status) {
+        status = normalizarStatus(status);
         if (status == null) return false;
         return "Em andamento".equalsIgnoreCase(status);
     }
@@ -293,6 +533,44 @@ public class ProcessoServiceImpl implements ProcessoService {
     private Processo toEntity(ProcessoDTO dto) {
         Processo processo = new Processo();
         BeanUtils.copyProperties(dto, processo);
+        processo.setStatus(normalizarStatus(processo.getStatus()));
         return processo;
+    }
+
+    private HistoricoProcessoDTO toHistoricoDTO(HistoricoProcesso historico) {
+        HistoricoProcessoDTO dto = new HistoricoProcessoDTO(historico);
+        dto.setStatusAnterior(normalizarStatus(dto.getStatusAnterior()));
+        dto.setStatusNovo(normalizarStatus(dto.getStatusNovo()));
+        return dto;
+    }
+
+    private String normalizarStatus(String status) {
+        if (status == null) {
+            return null;
+        }
+        String valor = status.trim();
+        String valorLower = valor.toLowerCase();
+        if (valor.equalsIgnoreCase("Respondido - Encerrado")) {
+            return "Encerrado";
+        }
+        if (valorLower.startsWith("respondido")) {
+            return "Respondido";
+        }
+        if (valorLower.startsWith("conclus") || valorLower.startsWith("conclu")) {
+            return "Concluído";
+        }
+        if (valorLower.startsWith("encerrado")) {
+            return "Encerrado";
+        }
+        if (valorLower.startsWith("encaminh")) {
+            return "Em andamento";
+        }
+        if (valorLower.startsWith("aguard")) {
+            return "Em andamento";
+        }
+        if (valorLower.startsWith("expirado")) {
+            return "Expirado";
+        }
+        return valor;
     }
 }
