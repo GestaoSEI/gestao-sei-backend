@@ -1,0 +1,4 @@
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS nome_completo VARCHAR(255);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS data_nascimento DATE;
+ALTER TABLE usuarios ADD CONSTRAINT uk_usuarios_email UNIQUE (email);

@@ -19,6 +19,7 @@ public class DataInitializer implements CommandLineRunner {
         if (usuarioRepository.findByLogin("admin") == null) {
             String encryptedPassword = new BCryptPasswordEncoder().encode("admin123");
             Usuario admin = new Usuario("admin", encryptedPassword, Role.ADMIN);
+            admin.setNomeCompleto("Administrador do Sistema");
             usuarioRepository.save(admin);
             System.out.println("Usuário ADMIN padrão criado: admin / admin123");
         }

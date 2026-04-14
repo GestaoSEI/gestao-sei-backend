@@ -21,7 +21,7 @@ O **Gestão SEI Backend** é uma solução robusta para gerenciar o fluxo de pro
 
 - Autenticação via **JWT (JSON Web Token)**.
 - Controle de perfis: `ADMIN` (gestão total) e `USER` (consulta e edição).
-- Auto-cadastro (`/auth/register`), reset de senha (`/auth/reset-password`) e gestão administrativa de usuários.
+- Login (`/auth/login`), reset de senha (`/auth/reset-password`) e gestão administrativa de usuários.
 - **Exclusão de usuário** (ADMIN): bloqueada automaticamente se o usuário possuir registros no histórico de processos.
 - **Troca de senha:** ADMIN pode redefinir a senha de qualquer usuário; USER pode alterar apenas a própria senha (exige senha atual).
 
@@ -81,7 +81,6 @@ O projeto está totalmente conteinerizado, facilitando o setup inicial.
 | Método | Rota                   | Descrição                        |
 | ------ | ---------------------- | -------------------------------- |
 | `POST` | `/auth/login`          | Autentica e retorna token JWT    |
-| `POST` | `/auth/register`       | Auto-cadastro de usuário         |
 | `POST` | `/auth/reset-password` | Redefine senha pelo login        |
 
 ### **Processos** (`/api/processos`)
@@ -103,8 +102,8 @@ O projeto está totalmente conteinerizado, facilitando o setup inicial.
 | ------ | ---- | --------- |
 | `GET` | `/api/usuarios` | Lista todos (ADMIN) |
 | `GET` | `/api/usuarios/login/{login}` | Busca por login |
-| `POST` | `/api/usuarios` | Cria usuário com senha padrão `senha123` (ADMIN) |
-| `PUT` | `/api/usuarios/{id}` | Atualiza login/perfil (ADMIN) |
+| `POST` | `/api/usuarios` | Cria usuário com nome, e-mail, data de nascimento e senha padrão `senha123` (ADMIN) |
+| `PUT` | `/api/usuarios/{id}` | Atualiza nome, e-mail, data de nascimento e perfil (ADMIN) |
 | `DELETE` | `/api/usuarios/{id}` | Exclui usuário (ADMIN) — bloqueado se houver histórico |
 | `PUT` | `/api/usuarios/{id}/senha` | Altera senha (ADMIN sem senha atual; USER exige senha atual) |
 | `GET` | `/api/usuarios/relatorio` | Gera PDF com lista de usuários (ADMIN) |
@@ -118,6 +117,26 @@ Para rodar localmente:
 ```bash
 ./mvnw test
 ```
+
+## 💾 Backup Local
+
+Para reduzir risco antes de importacoes, limpezas ou ajustes manuais no banco, o projeto possui scripts PowerShell em [`scripts/`](scripts):
+
+- `backup-bd.ps1`: gera um backup SQL completo
+- `exportar-processos.ps1`: exporta a tabela `processos` em CSV
+- `exportar-historico.ps1`: exporta a tabela `historico_processos` em CSV
+- `snapshot-dados.ps1`: executa os tres comandos acima de uma vez
+
+Todos os arquivos sao gravados por padrao em `backups\automaticos` com timestamp no nome, sem sobrescrever snapshots anteriores.
+
+Exemplo:
+
+```powershell
+cd gestao-sei-backend
+.\scripts\snapshot-dados.ps1
+```
+
+Use esse comando antes de importacoes CSV, exclusoes ou tratamentos em lote.
 
 ## 🤝 Contribuindo
 

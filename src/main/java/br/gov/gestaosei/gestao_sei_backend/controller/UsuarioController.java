@@ -54,6 +54,9 @@ public class UsuarioController {
         )
     })
     public ResponseEntity<List<UsuarioDTO>> listarTodos() {
+        if (!isAdminAutenticado()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
 
@@ -81,7 +84,7 @@ public class UsuarioController {
         )
     })
     public ResponseEntity<UsuarioDTO> buscarPorLogin(
-            @Parameter(description = "Login do usuário", example = "joao.silva", required = true)
+            @Parameter(description = "Login atual ou e-mail do usuário", example = "joao.silva@orgao.gov.br", required = true)
             @PathVariable String login) {
         return ResponseEntity.ok(usuarioService.buscarPorLogin(login));
     }
@@ -102,7 +105,7 @@ public class UsuarioController {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "Dados inválidos ou login já existe",
+            description = "Dados inválidos ou e-mail já existe",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ErrorResponse.class)
@@ -119,7 +122,9 @@ public class UsuarioController {
                     examples = @ExampleObject(
                         value = """
                         {
-                          "login": "joao.silva",
+                          "nomeCompleto": "João da Silva",
+                          "email": "joao.silva@orgao.gov.br",
+                          "dataNascimento": "1985-07-21",
                           "role": "USER"
                         }
                         """
@@ -127,6 +132,9 @@ public class UsuarioController {
                 )
             )
             @RequestBody @Valid UsuarioDTO dto) {
+        if (!isAdminAutenticado()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(usuarioService.criar(dto));
     }
 
@@ -146,7 +154,7 @@ public class UsuarioController {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "Dados inválidos ou login já existe",
+            description = "Dados inválidos ou e-mail já existe",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ErrorResponse.class)
@@ -173,7 +181,9 @@ public class UsuarioController {
                     examples = @ExampleObject(
                         value = """
                         {
-                          "login": "joao.silva.atualizado",
+                          "nomeCompleto": "João da Silva Atualizado",
+                          "email": "joao.silva.atualizado@orgao.gov.br",
+                          "dataNascimento": "1985-07-21",
                           "role": "ADMIN"
                         }
                         """
@@ -181,6 +191,9 @@ public class UsuarioController {
                 )
             )
             @RequestBody @Valid UsuarioDTO dto) {
+        if (!isAdminAutenticado()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(usuarioService.atualizar(id, dto));
     }
 
@@ -280,6 +293,9 @@ public class UsuarioController {
     @GetMapping("/relatorio")
     @Operation(summary = "Gerar relatório PDF de usuários", description = "Gera um relatório PDF com a lista de todos os usuários cadastrados")
     public ResponseEntity<byte[]> gerarRelatorio() {
+        if (!isAdminAutenticado()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         try {
             List<UsuarioDTO> usuarios = usuarioService.listarTodos();
             byte[] pdfBytes = relatorioService.gerarRelatorioUsuarios(usuarios);
@@ -290,5 +306,13 @@ public class UsuarioController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private boolean isAdminAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof Usuario currentUser)) {
+            return false;
+        }
+        return currentUser.getRole() == Role.ADMIN;
     }
 }

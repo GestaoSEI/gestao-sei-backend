@@ -2,10 +2,8 @@ package br.gov.gestaosei.gestao_sei_backend.controller;
 
 import br.gov.gestaosei.gestao_sei_backend.dto.AuthenticationDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.LoginResponseDTO;
-import br.gov.gestaosei.gestao_sei_backend.dto.RegisterDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.ResetPasswordDTO;
 import br.gov.gestaosei.gestao_sei_backend.exception.ErrorResponse;
-import br.gov.gestaosei.gestao_sei_backend.model.Role;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
 import br.gov.gestaosei.gestao_sei_backend.repository.UsuarioRepository;
 import br.gov.gestaosei.gestao_sei_backend.service.TokenService;
@@ -21,11 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/auth")
@@ -82,7 +82,7 @@ public class AuthenticationController {
                     examples = @ExampleObject(
                         value = """
                         {
-                          "login": "joao.silva",
+                          "login": "joao.silva@orgao.gov.br",
                           "senha": "123456"
                         }
                         """
@@ -96,55 +96,6 @@ public class AuthenticationController {
         var token = tokenService.generateToken((Usuario) auth.getPrincipal());
 
         return ResponseEntity.ok(new LoginResponseDTO(token));
-    }
-
-    @PostMapping("/register")
-    @Operation(
-        summary = "Registrar novo usuário",
-        description = "Cria um novo usuário no sistema"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Usuário criado com sucesso"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Login já existe ou dados inválidos",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = ErrorResponse.class)
-            )
-        )
-    })
-    public ResponseEntity<Void> register(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Dados do novo usuário",
-                required = true,
-                content = @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = RegisterDTO.class),
-                    examples = @ExampleObject(
-                        value = """
-                        {
-                          "login": "joao.silva",
-                          "senha": "123456",
-                          "role": "USER"
-                        }
-                        """
-                    )
-                )
-            )
-            @RequestBody @Valid RegisterDTO data) {
-        if (usuarioRepository.findByLogin(data.login()) != null) return ResponseEntity.badRequest().build();
-
-        String encryptedPassword = new BCryptPasswordEncoder().encode(data.senha());
-        Role userRole = Role.valueOf(data.role());
-        Usuario newUser = new Usuario(data.login(), encryptedPassword, userRole);
-
-        usuarioRepository.save(newUser);
-
-        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reset-password")
@@ -176,7 +127,7 @@ public class AuthenticationController {
                     examples = @ExampleObject(
                         value = """
                         {
-                          "login": "joao.silva",
+                          "login": "joao.silva@orgao.gov.br",
                           "novaSenha": "NovaSenha@123"
                         }
                         """
@@ -185,7 +136,7 @@ public class AuthenticationController {
             )
             @RequestBody @Valid ResetPasswordDTO data) {
 
-        Usuario usuario = usuarioRepository.findByLogin(data.login());
+        Usuario usuario = buscarPorIdentificador(data.login());
         if (usuario == null) {
             throw new IllegalArgumentException("Usuário não encontrado com o login: " + data.login());
         }
@@ -195,5 +146,13 @@ public class AuthenticationController {
         usuarioRepository.save(usuario);
 
         return ResponseEntity.ok().build();
+    }
+
+    private Usuario buscarPorIdentificador(String identificador) {
+        if (identificador == null || identificador.isBlank()) {
+            return null;
+        }
+        String valor = identificador.trim();
+        return usuarioRepository.findByLoginOrEmail(valor, valor.toLowerCase(Locale.ROOT));
     }
 }

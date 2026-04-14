@@ -10,7 +10,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,7 +38,7 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public UsuarioDTO buscarPorLogin(String login) {
-        Usuario usuario = usuarioRepository.findByLogin(login);
+        Usuario usuario = buscarPorIdentificador(login);
         if (usuario != null) {
             return toDTO(usuario);
         } else {
@@ -46,13 +48,14 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioDTO criar(UsuarioDTO dto) {
-        // Verificar se login já existe
-        if (usuarioRepository.findByLogin(dto.getLogin()) != null) {
-            throw new IllegalArgumentException("Login já existe: " + dto.getLogin());
-        }
+        String emailNormalizado = normalizarEmail(dto.getEmail());
+        validarEmailDisponivel(emailNormalizado, null);
 
         Usuario usuario = new Usuario();
-        usuario.setLogin(dto.getLogin());
+        usuario.setLogin(emailNormalizado);
+        usuario.setEmail(emailNormalizado);
+        usuario.setNomeCompleto(dto.getNomeCompleto().trim());
+        usuario.setDataNascimento(dto.getDataNascimento());
         usuario.setRole(dto.getRole());
         usuario.setSenha(passwordEncoder.encode("senha123")); // Senha padrão
 
@@ -65,13 +68,13 @@ public class UsuarioService {
         Usuario usuarioExistente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado com o ID: " + id));
 
-        // Verificar se login já existe (para outro usuário)
-        Usuario usuarioComMesmoLogin = usuarioRepository.findByLogin(dto.getLogin());
-        if (usuarioComMesmoLogin != null && !usuarioComMesmoLogin.getId().equals(id)) {
-            throw new IllegalArgumentException("Login já existe: " + dto.getLogin());
-        }
+        String emailNormalizado = normalizarEmail(dto.getEmail());
+        validarEmailDisponivel(emailNormalizado, id);
 
-        usuarioExistente.setLogin(dto.getLogin());
+        usuarioExistente.setLogin(emailNormalizado);
+        usuarioExistente.setEmail(emailNormalizado);
+        usuarioExistente.setNomeCompleto(dto.getNomeCompleto().trim());
+        usuarioExistente.setDataNascimento(dto.getDataNascimento());
         usuarioExistente.setRole(dto.getRole());
 
         usuarioRepository.save(usuarioExistente);
@@ -118,7 +121,34 @@ public class UsuarioService {
         return new UsuarioDTO(
             usuario.getId(),
             usuario.getLogin(),
+            usuario.getNomeCompleto(),
+            usuario.getEmail(),
+            usuario.getDataNascimento(),
             usuario.getRole()
         );
+    }
+
+    private Usuario buscarPorIdentificador(String identificador) {
+        if (identificador == null || identificador.isBlank()) {
+            return null;
+        }
+        String valor = identificador.trim();
+        return usuarioRepository.findByLoginOrEmail(valor, valor.toLowerCase(Locale.ROOT));
+    }
+
+    private String normalizarEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void validarEmailDisponivel(String email, Long idIgnorado) {
+        Usuario usuarioComMesmoLogin = usuarioRepository.findByLogin(email);
+        if (usuarioComMesmoLogin != null && !usuarioComMesmoLogin.getId().equals(idIgnorado)) {
+            throw new IllegalArgumentException("E-mail já cadastrado: " + email);
+        }
+
+        Usuario usuarioComMesmoEmail = usuarioRepository.findByEmail(email);
+        if (usuarioComMesmoEmail != null && !usuarioComMesmoEmail.getId().equals(idIgnorado)) {
+            throw new IllegalArgumentException("E-mail já cadastrado: " + email);
+        }
     }
 }

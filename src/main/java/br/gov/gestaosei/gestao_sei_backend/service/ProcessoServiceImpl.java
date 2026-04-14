@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProcessoServiceImpl implements ProcessoService {
+    private static final String NUMERO_PROCESSO_REGEX = "^\\d{4}\\.\\d{4}/\\d{7}-\\d$";
 
     private final ProcessoRepository processoRepository;
     private final HistoricoProcessoRepository historicoProcessoRepository;
@@ -139,7 +140,13 @@ public class ProcessoServiceImpl implements ProcessoService {
     @Override
     @Transactional
     public ProcessoDTO salvar(ProcessoDTO processoDTO) {
+        String numeroNormalizado = normalizarNumeroProcesso(processoDTO.getNumeroProcesso());
+        if (buscarProcessoPorNumeroFlex(numeroNormalizado).isPresent()) {
+            throw new IllegalArgumentException("Esse processo já foi cadastrado.");
+        }
+
         Processo processo = toEntity(processoDTO);
+        processo.setNumeroProcesso(numeroNormalizado);
         processo = processoRepository.save(processo);
         return toDTO(processo);
     }
@@ -289,6 +296,7 @@ public class ProcessoServiceImpl implements ProcessoService {
                     if (numero.isBlank()) {
                         throw new IllegalArgumentException("número do processo vazio");
                     }
+                    validarNumeroProcessoImportacao(numero);
                     Optional<Processo> existenteOpt = buscarProcessoPorNumeroFlex(numero);
                     if (existenteOpt.isPresent()) {
                         // Número já existe no banco: conta como duplicata, mas atualiza dados válidos para corrigir texto/campos antigos.
@@ -386,6 +394,13 @@ public class ProcessoServiceImpl implements ProcessoService {
         }
 
         return originalLimpo;
+    }
+
+    private void validarNumeroProcessoImportacao(String numeroProcesso) {
+        if (!numeroProcesso.matches(NUMERO_PROCESSO_REGEX)) {
+            throw new IllegalArgumentException(
+                    "número do processo inválido; use o padrão xxxx.xxxx/xxxxxxx-x");
+        }
     }
 
     private Optional<Processo> buscarProcessoPorNumeroFlex(String numeroProcesso) {

@@ -12,7 +12,9 @@
 		</conditionalStyle>
 	</style>
 	<field name="id" class="java.lang.Long"/>
-	<field name="login" class="java.lang.String"/>
+	<field name="nomeCompleto" class="java.lang.String"/>
+	<field name="email" class="java.lang.String"/>
+	<field name="dataNascimento" class="java.time.LocalDate"/>
 	<field name="role" class="br.gov.gestaosei.gestao_sei_backend.model.Role"/>
 	<background>
 		<band splitType="Stretch"/>
@@ -66,12 +68,22 @@
 				<text><![CDATA[ID]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="60" y="0" width="360" height="18" forecolor="#000000" uuid="aaaaaaaa-0002-0002-0002-000000000002"/>
+				<reportElement style="Column header" x="60" y="0" width="180" height="18" forecolor="#000000" uuid="aaaaaaaa-0002-0002-0002-000000000002"/>
 				<textElement><font isBold="true"/></textElement>
-				<text><![CDATA[Login]]></text>
+				<text><![CDATA[Nome Completo]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="420" y="0" width="135" height="18" forecolor="#000000" uuid="aaaaaaaa-0002-0002-0002-000000000003"/>
+				<reportElement style="Column header" x="240" y="0" width="180" height="18" forecolor="#000000" uuid="aaaaaaaa-0002-0002-0002-000000000003"/>
+				<textElement><font isBold="true"/></textElement>
+				<text><![CDATA[E-mail]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="420" y="0" width="75" height="18" forecolor="#000000" uuid="aaaaaaaa-0002-0002-0002-000000000004"/>
+				<textElement><font isBold="true"/></textElement>
+				<text><![CDATA[Nasc.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="495" y="0" width="60" height="18" forecolor="#000000" uuid="aaaaaaaa-0002-0002-0002-000000000005"/>
 				<textElement><font isBold="true"/></textElement>
 				<text><![CDATA[Perfil]]></text>
 			</staticText>
@@ -86,11 +98,19 @@
 					<textFieldExpression><![CDATA[$F{id}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="60" y="0" width="360" height="18" uuid="aaaaaaaa-0003-0003-0003-000000000003"/>
-					<textFieldExpression><![CDATA[$F{login}]]></textFieldExpression>
+					<reportElement style="Detail" positionType="Float" x="60" y="0" width="180" height="18" uuid="aaaaaaaa-0003-0003-0003-000000000003"/>
+					<textFieldExpression><![CDATA[$F{nomeCompleto}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="420" y="0" width="135" height="18" uuid="aaaaaaaa-0003-0003-0003-000000000004"/>
+					<reportElement style="Detail" positionType="Float" x="240" y="0" width="180" height="18" uuid="aaaaaaaa-0003-0003-0003-000000000004"/>
+					<textFieldExpression><![CDATA[$F{email}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="420" y="0" width="75" height="18" uuid="aaaaaaaa-0003-0003-0003-000000000005"/>
+					<textFieldExpression><![CDATA[$F{dataNascimento} == null ? "" : $F{dataNascimento}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="495" y="0" width="60" height="18" uuid="aaaaaaaa-0003-0003-0003-000000000006"/>
 					<textFieldExpression><![CDATA[$F{role}.toString()]]></textFieldExpression>
 				</textField>
 			</frame>

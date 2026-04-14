@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -43,33 +44,41 @@ class UsuarioServiceTest {
     void setUp() {
         usuarioTeste = new Usuario();
         usuarioTeste.setId(1L);
-        usuarioTeste.setLogin("testuser");
+        usuarioTeste.setLogin("testuser@orgao.gov.br");
+        usuarioTeste.setEmail("testuser@orgao.gov.br");
+        usuarioTeste.setNomeCompleto("Usuário Teste");
+        usuarioTeste.setDataNascimento(LocalDate.of(1990, 1, 1));
         usuarioTeste.setRole(Role.USER);
         usuarioTeste.setSenha("senha123");
 
         usuarioDTOTeste = new UsuarioDTO();
         usuarioDTOTeste.setId(1L);
-        usuarioDTOTeste.setLogin("testuser");
+        usuarioDTOTeste.setLogin("testuser@orgao.gov.br");
+        usuarioDTOTeste.setNomeCompleto("Usuário Teste");
+        usuarioDTOTeste.setEmail("testuser@orgao.gov.br");
+        usuarioDTOTeste.setDataNascimento(LocalDate.of(1990, 1, 1));
         usuarioDTOTeste.setRole(Role.USER);
     }
 
     @Test
     @DisplayName("Deve criar usuário com sucesso")
     void testCriarUsuario() {
-        when(usuarioRepository.findByLogin("testuser")).thenReturn(null);
+        when(usuarioRepository.findByLogin("testuser@orgao.gov.br")).thenReturn(null);
+        when(usuarioRepository.findByEmail("testuser@orgao.gov.br")).thenReturn(null);
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioTeste);
 
         UsuarioDTO resultado = usuarioService.criar(usuarioDTOTeste);
 
         assertNotNull(resultado);
-        assertEquals("testuser", resultado.getLogin());
+        assertEquals("testuser@orgao.gov.br", resultado.getLogin());
+        assertEquals("testuser@orgao.gov.br", resultado.getEmail());
         verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao criar usuário com login existente")
+    @DisplayName("Deve lançar exceção ao criar usuário com e-mail existente")
     void testCriarUsuarioComLoginExistente() {
-        when(usuarioRepository.findByLogin("testuser")).thenReturn(usuarioTeste);
+        when(usuarioRepository.findByLogin("testuser@orgao.gov.br")).thenReturn(usuarioTeste);
 
         assertThrows(IllegalArgumentException.class, () -> usuarioService.criar(usuarioDTOTeste));
         verify(usuarioRepository, never()).save(any(Usuario.class));
@@ -78,18 +87,18 @@ class UsuarioServiceTest {
     @Test
     @DisplayName("Deve buscar usuário por login com sucesso")
     void testBuscarUsuarioPorLogin() {
-        when(usuarioRepository.findByLogin("testuser")).thenReturn(usuarioTeste);
+        when(usuarioRepository.findByLoginOrEmail("testuser@orgao.gov.br", "testuser@orgao.gov.br")).thenReturn(usuarioTeste);
 
-        UsuarioDTO resultado = usuarioService.buscarPorLogin("testuser");
+        UsuarioDTO resultado = usuarioService.buscarPorLogin("testuser@orgao.gov.br");
 
         assertNotNull(resultado);
-        assertEquals("testuser", resultado.getLogin());
+        assertEquals("testuser@orgao.gov.br", resultado.getLogin());
     }
 
     @Test
     @DisplayName("Deve lançar exceção ao buscar login inexistente")
     void testBuscarUsuarioPorLoginInexistente() {
-        when(usuarioRepository.findByLogin("unknown")).thenReturn(null);
+        when(usuarioRepository.findByLoginOrEmail("unknown", "unknown")).thenReturn(null);
 
         assertThrows(EntityNotFoundException.class, () -> usuarioService.buscarPorLogin("unknown"));
     }
@@ -109,7 +118,8 @@ class UsuarioServiceTest {
     @DisplayName("Deve atualizar usuário com sucesso")
     void testAtualizarUsuario() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioTeste));
-        when(usuarioRepository.findByLogin("testuser")).thenReturn(usuarioTeste);
+        when(usuarioRepository.findByLogin("testuser@orgao.gov.br")).thenReturn(usuarioTeste);
+        when(usuarioRepository.findByEmail("testuser@orgao.gov.br")).thenReturn(usuarioTeste);
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioTeste);
 
         UsuarioDTO resultado = usuarioService.atualizar(1L, usuarioDTOTeste);
@@ -147,7 +157,7 @@ class UsuarioServiceTest {
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioTeste);
 
         AlterarSenhaDTO dto = new AlterarSenhaDTO("senha123", "novaSenha456");
-        assertDoesNotThrow(() -> usuarioService.alterarSenha(1L, dto, "testuser", false));
+        assertDoesNotThrow(() -> usuarioService.alterarSenha(1L, dto, "testuser@orgao.gov.br", false));
         verify(usuarioRepository).save(any(Usuario.class));
     }
 
@@ -159,7 +169,7 @@ class UsuarioServiceTest {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioTeste));
 
         AlterarSenhaDTO dto = new AlterarSenhaDTO("senhaErrada", "novaSenha456");
-        assertThrows(IllegalArgumentException.class, () -> usuarioService.alterarSenha(1L, dto, "testuser", false));
+        assertThrows(IllegalArgumentException.class, () -> usuarioService.alterarSenha(1L, dto, "testuser@orgao.gov.br", false));
     }
 
     @Test

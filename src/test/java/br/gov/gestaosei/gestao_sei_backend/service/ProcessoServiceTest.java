@@ -1,5 +1,6 @@
 package br.gov.gestaosei.gestao_sei_backend.service;
 
+import br.gov.gestaosei.gestao_sei_backend.dto.ImportacaoResultadoDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoDTO;
 import br.gov.gestaosei.gestao_sei_backend.model.Processo;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
@@ -15,6 +16,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -86,13 +88,14 @@ class ProcessoServiceTest {
 
     @Test
     void buscarPorPalavraChave_DeveChamarRepositorio() {
-        when(processoRepository.searchByKeyword("teste")).thenReturn(Arrays.asList(processo));
+        when(processoRepository.findAll()).thenReturn(Arrays.asList(processo));
+        processo.setObservacao("Processo teste");
 
         List<ProcessoDTO> resultado = processoService.buscarPorPalavraChave("teste");
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        verify(processoRepository).searchByKeyword("teste");
+        verify(processoRepository).findAll();
     }
 
     @Test
@@ -103,6 +106,23 @@ class ProcessoServiceTest {
 
         assertNotNull(resultado);
         assertEquals(processoDTO.getNumeroProcesso(), resultado.getNumeroProcesso());
+    }
+
+    @Test
+    void salvar_ComNumeroJaExistente_DeveInformarMensagemClara() {
+        processoDTO.setNumeroProcesso("6024.2026/0001234-5");
+        Processo existente = new Processo();
+        existente.setNumeroProcesso("6024.2026/0001234-5");
+        when(processoRepository.findByNumeroProcesso("6024.2026/0001234-5"))
+                .thenReturn(Optional.of(existente));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> processoService.salvar(processoDTO)
+        );
+
+        assertEquals("Esse processo já foi cadastrado.", exception.getMessage());
+        verify(processoRepository, never()).save(any(Processo.class));
     }
 
     @Test
@@ -126,12 +146,42 @@ class ProcessoServiceTest {
 
     @Test
     void deletarPorNumero_ComNumeroExistente_DeveDeletar() {
+        processo.setDuplicata(true);
         when(processoRepository.findByNumeroProcesso("12345/2023")).thenReturn(Optional.of(processo));
         doNothing().when(processoRepository).delete(processo);
 
         processoService.deletarPorNumero("12345/2023");
 
         verify(processoRepository).delete(processo);
+    }
+
+    @Test
+    void importarCsv_DeveRejeitarLinhaComNumeroInvalidoESeguirComLinhaValida() throws Exception {
+        String csv = """
+                NumeroProcesso,TipoProcesso,Origem,UnidadeAtual,Status,DataPrazoFinal,Observacao
+                Ofício sobre escuta especializada de crianças - PC -,Administrativo,Protocolo,Setor A,Em andamento,15/04/2026,Inválido
+                6024.2026/0001234-5,Administrativo,Protocolo,Setor B,Em andamento,16/04/2026,Válido
+                """;
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "processos.csv",
+                "text/csv",
+                csv.getBytes()
+        );
+
+        when(processoRepository.count()).thenReturn(0L);
+        when(processoRepository.findByNumeroProcesso("6024.2026/0001234-5")).thenReturn(Optional.empty());
+        when(processoRepository.save(any(Processo.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ImportacaoResultadoDTO resultado = processoService.importarCsv(file);
+
+        assertEquals(1, resultado.getImportados());
+        assertEquals(0, resultado.getDuplicatas());
+        assertEquals(1, resultado.getErros());
+        assertEquals(1, resultado.getMensagensErro().size());
+        assertTrue(resultado.getMensagensErro().get(0).contains("Linha 2"));
+        assertTrue(resultado.getMensagensErro().get(0).contains("número do processo inválido"));
+        verify(processoRepository, times(1)).save(any(Processo.class));
     }
 
     @Test

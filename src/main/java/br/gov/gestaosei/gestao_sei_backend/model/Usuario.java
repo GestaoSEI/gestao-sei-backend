@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -18,6 +19,15 @@ public class Usuario implements UserDetails {
 
     @Column(nullable = false, unique = true)
     private String login;
+
+    @Column(unique = true)
+    private String email;
+
+    @Column
+    private String nomeCompleto;
+
+    @Column
+    private LocalDate dataNascimento;
 
     @Column(nullable = false)
     private String senha;
@@ -41,6 +51,30 @@ public class Usuario implements UserDetails {
 
     public void setLogin(String login) {
         this.login = login;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getNomeCompleto() {
+        return nomeCompleto;
+    }
+
+    public void setNomeCompleto(String nomeCompleto) {
+        this.nomeCompleto = nomeCompleto;
+    }
+
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
     }
 
     public String getPassword() {
