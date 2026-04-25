@@ -16,12 +16,19 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        // Garante que o usuário ADMIN padrão exista se o banco estiver vazio
         if (usuarioRepository.findByLogin("admin") == null) {
             String encryptedPassword = new BCryptPasswordEncoder().encode("admin123");
-            Usuario admin = new Usuario("admin", encryptedPassword, Role.ADMIN);
+            Usuario admin = new Usuario();
+            admin.setLogin("admin");
+            admin.setSenha(encryptedPassword);
+            admin.setRole(Role.ADMIN);
             admin.setNomeCompleto("Administrador do Sistema");
+            admin.setEmail("admin@gestaosei.gov.br");
+            admin.setDataNascimento(java.time.LocalDate.of(1980, 1, 1));
+            
             usuarioRepository.save(admin);
-            System.out.println("Usuário ADMIN padrão criado: admin / admin123");
+            System.out.println("Usuário ADMIN padrão verificado/criado.");
         }
     }
 }
