@@ -15,137 +15,71 @@ O **Gestão SEI Backend** é uma solução robusta para gerenciar o fluxo de pro
 
 > 💡 **Este repositório é um template.** A organização [GestaoSEI](https://github.com/GestaoSEI) foi criada para que outros servidores públicos possam utilizar este sistema como ponto de partida, adaptando-o à realidade de sua própria unidade. Sinta-se à vontade para fazer um fork e personalizar.
 
-## ✨ Funcionalidades Implementadas
+## 🛠️ Arquitetura e Design
+
+O projeto utiliza uma arquitetura baseada em camadas e segue padrões modernos de desenvolvimento. Para detalhes sobre o modelo de dados, ciclo de vida de processos e diagramas de sequência, acesse:
+
+👉 **[Documentação de Arquitetura (Diagramas UML)](ARQUITETURA.md)**
+
+### Modelo de Dados Resumido
+```mermaid
+classDiagram
+    Usuario "1" -- "*" HistoricoProcesso : registra
+    Processo "1" -- "*" HistoricoProcesso : possui
+    class Usuario { +String login, +Role role }
+    class Processo { +String numero, +StatusProcesso status, +LocalDate prazo }
+```
+
+## ✨ Funcionalidades e Regras de Negócio
+
+| ID | Regra | Descrição |
+| :---: | :--- | :--- |
+| **RN01** | **Integridade** | Bloqueia exclusão de usuários com histórico de tramitação. |
+| **RN02** | **Auditoria** | Registro automático no histórico para cada mudança de status/unidade. |
+| **RN03** | **Prazos** | Sinalização de urgência (<= 5 dias) e expiração automática (Cron Job). |
+| **RN04** | **Perfis** | Controle de acesso granular entre `ADMIN` e `USER`. |
 
 ### 🔐 **Segurança e Acesso**
-
-- Autenticação via **JWT (JSON Web Token)**.
-- Controle de perfis: `ADMIN` (gestão total) e `USER` (consulta e edição).
-- Login (`/auth/login`), reset de senha (`/auth/reset-password`) e gestão administrativa de usuários.
-- **Exclusão de usuário** (ADMIN): bloqueada automaticamente se o usuário possuir registros no histórico de processos.
-- **Troca de senha:** ADMIN pode redefinir a senha de qualquer usuário; USER pode alterar apenas a própria senha (exige senha atual).
+- Autenticação via **JWT**.
+- Login, reset de senha e troca de senha com validação de perfil.
 
 ### 📊 **Gestão de Processos**
-
-- Cadastro completo de processos (Número, Tipo, Origem, Unidade, Status, Prazo).
-- **Busca Simplificada:** Localize processos por qualquer termo (número, tipo, observação) em um único campo.
-- **Filtros Avançados:** por status, unidade e prazo expirado.
-- **Histórico Automático:** Toda mudança de status ou unidade gera um registro histórico com data, hora e usuário responsável.
-- **Controle de Prazos Inteligente:**
-  - Sinalização de urgência para processos que vencem em 5 dias ou menos.
-  - **Agendamento Automático:** O sistema verifica diariamente à meia-noite processos vencidos e altera o status para `EXPIRADO`.
+- Cadastro, busca simplificada por termo único e filtros avançados.
+- **Agendamento Automático:** Verificação diária à meia-noite para processos vencidos.
 
 ### 📈 **Relatórios Gerenciais**
+- Exportação em PDF via **JasperReports** com filtros dinâmicos e formatação PT-BR.
 
-- Geração de listagem em PDF via **JasperReports 7.0.6**.
-- Filtros dinâmicos integrados ao relatório.
-- Formatação de data padrão brasileiro (PT-BR).
-- Relatório de usuários cadastrados.
-
-## 🏗️ Arquitetura
-
+## 🏗️ Estrutura de Pastas
 ```text
 src/main/java/br/gov/gestaosei/gestao_sei_backend/
 ├── 📁 config/          # Segurança (JWT), OpenAPI e Filtros
-├── 📁 controller/      # API Endpoints (Processos, Usuários, Auth)
-├── 📁 dto/             # Objetos de Transferência de Dados
-├── 📁 exception/       # Tratamento de erros e exceções
-├── 📁 model/           # Entidades do Banco de Dados
-├── 📁 repository/      # Acesso ao Banco (Spring Data JPA)
-└── 📁 service/         # Regras de Negócio e Agendamentos
+├── 📁 controller/      # API Endpoints
+├── 📁 model/           # Entidades JPA
+├── 📁 service/         # Regras de Negócio e Agendamentos (Cron)
+└── 📁 repository/      # Acesso ao Banco de Dados
 ```
 
 ## 🚀 Como Executar (Docker)
 
-O projeto está totalmente conteinerizado, facilitando o setup inicial.
-
-**Pré-requisitos:** Docker e Docker Compose instalados.
+**Pré-requisitos:** Docker e Docker Compose.
 
 1. **Subir a aplicação:**
-
    ```bash
    docker-compose up --build -d
    ```
-
-2. **Acessar a documentação (Swagger):**
-   Abra no navegador: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
-
-3. **Credenciais Iniciais (DataInitializer):**
-   - **Usuário:** `admin`
-   - **Senha:** `admin123`
-
-## 🔧 Endpoints Principais
-
-### **Autenticação** (`/auth`)
-
-| Método | Rota                   | Descrição                        |
-| ------ | ---------------------- | -------------------------------- |
-| `POST` | `/auth/login`          | Autentica e retorna token JWT    |
-| `POST` | `/auth/reset-password` | Redefine senha pelo login        |
-
-### **Processos** (`/api/processos`)
-
-| Método | Rota | Descrição |
-| ------ | ---- | --------- |
-| `GET` | `/api/processos` | Lista todos os processos |
-| `POST` | `/api/processos` | Cadastra novo processo |
-| `PUT` | `/api/processos/atualizar?numero=` | Atualiza processo |
-| `DELETE` | `/api/processos/excluir?numero=` | Remove processo |
-| `GET` | `/api/processos/busca?keyword=` | Busca por termo |
-| `GET` | `/api/processos/filtro` | Filtra por status / unidade / prazo |
-| `GET` | `/api/processos/historico/{id}` | Histórico de tramitação |
-| `GET` | `/api/processos/relatorio` | Gera PDF com filtros |
-
-### **Usuários** (`/api/usuarios`)
-
-| Método | Rota | Descrição |
-| ------ | ---- | --------- |
-| `GET` | `/api/usuarios` | Lista todos (ADMIN) |
-| `GET` | `/api/usuarios/login/{login}` | Busca por login |
-| `POST` | `/api/usuarios` | Cria usuário com nome, e-mail, data de nascimento e senha padrão `senha123` (ADMIN) |
-| `PUT` | `/api/usuarios/{id}` | Atualiza nome, e-mail, data de nascimento e perfil (ADMIN) |
-| `DELETE` | `/api/usuarios/{id}` | Exclui usuário (ADMIN) — bloqueado se houver histórico |
-| `PUT` | `/api/usuarios/{id}/senha` | Altera senha (ADMIN sem senha atual; USER exige senha atual) |
-| `GET` | `/api/usuarios/relatorio` | Gera PDF com lista de usuários (ADMIN) |
+2. **Swagger UI:** [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+3. **Credenciais Iniciais:** `admin` / `admin123`
 
 ## 🧪 Testes
-
-O projeto conta com **22 testes unitários** cobrindo as principais regras de negócio, incluindo validação de exclusão de usuário com histórico e troca de senha por perfil. Os testes são executados automaticamente durante o build da imagem Docker.
-
-Para rodar localmente:
-
+O projeto conta com **22 testes unitários**.
 ```bash
 ./mvnw test
 ```
 
 ## 💾 Backup Local
-
-Para reduzir risco antes de importacoes, limpezas ou ajustes manuais no banco, o projeto possui scripts PowerShell em [`scripts/`](scripts):
-
-- `backup-bd.ps1`: gera um backup SQL completo
-- `exportar-processos.ps1`: exporta a tabela `processos` em CSV
-- `exportar-historico.ps1`: exporta a tabela `historico_processos` em CSV
-- `snapshot-dados.ps1`: executa os tres comandos acima de uma vez
-
-Todos os arquivos sao gravados por padrao em `backups\automaticos` com timestamp no nome, sem sobrescrever snapshots anteriores.
-
-Exemplo:
-
-```powershell
-cd gestao-sei-backend
-.\scripts\snapshot-dados.ps1
-```
-
-Use esse comando antes de importacoes CSV, exclusoes ou tratamentos em lote.
-
-## 🤝 Contribuindo
-
-Este é um projeto **Open Source**. Leia o [Guia de Contribuição](CONTRIBUTING.md) para saber como configurar o ambiente, seguir os padrões do projeto e enviar um Pull Request.
-
-## 📄 Licença
-
-Este projeto está licenciado sob a **MIT License** — veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Scripts PowerShell em `scripts/` para backups rápidos antes de importações:
+- `.\scripts\snapshot-dados.ps1` (Backup completo: SQL + CSVs)
 
 ---
-
 Made with ❤️ by Gilvaneide Medeiros

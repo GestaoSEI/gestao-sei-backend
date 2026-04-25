@@ -1,14 +1,26 @@
 #!/bin/sh
 
-remote_name="$1"
 remote_url="$2"
 
-if [ "$remote_name" = "origin" ] || echo "$remote_url" | grep -q "github.com/GestaoSEI/"; then
-  echo ""
-  echo "Push bloqueado para repositório público (origin)." >&2
-  echo "Use o remoto privado: git push private main" >&2
-  echo ""
-  exit 1
-fi
+# Verifica se a URL contém "Minha-conta-GestaoSEI" (seu privado)
+case "$remote_url" in
+    *Minha-conta-GestaoSEI*)
+        exit 0
+        ;;
+esac
+
+# Verifica se a URL contém "GestaoSEI" (o público)
+case "$remote_url" in
+    *GestaoSEI*)
+        echo ""
+        echo "--- AVISO DE SEGURANÇA ---"
+        echo "Você está enviando código para o repositório PÚBLICO da organização."
+        echo "Certifique-se de que não há dados sensíveis (senhas, nomes reais) no código."
+        echo "---"
+        # O exit 0 permite o push após mostrar o aviso.
+        # Se quiser bloquear totalmente, mude para exit 1.
+        exit 0
+        ;;
+esac
 
 exit 0
