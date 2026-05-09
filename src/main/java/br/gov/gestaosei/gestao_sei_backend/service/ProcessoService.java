@@ -23,4 +23,5 @@ public interface ProcessoService {
     void deletarPorNumero(String numeroProcesso);
 
     ImportacaoResultadoDTO importarCsv(MultipartFile file) throws IOException;
+    byte[] exportarProcessosCsv() throws IOException;
 }

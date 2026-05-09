@@ -178,4 +178,23 @@ public class ProcessoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @Operation(summary = "Exportar processos para CSV",
+            description = "Exporta todos os processos para um arquivo CSV")
+    @GetMapping("/exportar-csv")
+    public ResponseEntity<byte[]> exportarProcessosCsv() {
+        try {
+            byte[] csvBytes = processoService.exportarProcessosCsv();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv"));
+            headers.setContentDispositionFormData("attachment", "processos.csv");
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

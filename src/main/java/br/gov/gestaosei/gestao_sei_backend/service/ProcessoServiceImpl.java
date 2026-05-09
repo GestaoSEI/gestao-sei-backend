@@ -340,6 +340,42 @@ public class ProcessoServiceImpl implements ProcessoService {
         return new ImportacaoResultadoDTO(importados, duplicatas, erros, mensagensErro);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarProcessosCsv() throws IOException {
+        List<Processo> processos = processoRepository.findAll();
+        StringBuilder csvContent = new StringBuilder();
+
+        // Cabeçalho CSV
+        csvContent.append("numeroProcesso,tipoProcesso,origem,unidadeAtual,status,dataPrazoFinal,observacao\n");
+
+        // Dados dos processos
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE; // Formato YYYY-MM-DD
+        for (Processo processo : processos) {
+            csvContent.append(escapeCsv(processo.getNumeroProcesso())).append(",");
+            csvContent.append(escapeCsv(processo.getTipoProcesso())).append(",");
+            csvContent.append(escapeCsv(processo.getOrigem())).append(",");
+            csvContent.append(escapeCsv(processo.getUnidadeAtual())).append(",");
+            csvContent.append(escapeCsv(processo.getStatus())).append(",");
+            csvContent.append(processo.getDataPrazoFinal() != null ? processo.getDataPrazoFinal().format(formatter) : "").append(",");
+            csvContent.append(escapeCsv(processo.getObservacao())).append("\n");
+        }
+
+        return csvContent.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    // Método auxiliar para escapar valores CSV (lidar com vírgulas, aspas, etc.)
+    private String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        String escaped = value.replace("\"", "\"\""); // Escapa aspas duplas
+        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+            return "\"" + escaped + "\""; // Envolve em aspas se contiver caracteres especiais
+        }
+        return escaped;
+    }
+
     private char detectarDelimitador(String cabecalho) {
         if (cabecalho == null) return ',';
         String semBom = cabecalho.replace("\uFEFF", "");
@@ -373,7 +409,7 @@ public class ProcessoServiceImpl implements ProcessoService {
         if (numeroBruto == null) return "";
         String originalLimpo = numeroBruto
                 .replace('\u00A0', ' ')
-                .replace("�", "")
+                .replace("", "")
                 .trim();
 
         String limpo = originalLimpo;
