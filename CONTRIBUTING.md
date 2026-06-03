@@ -80,7 +80,7 @@ O banco ficará disponível em `localhost:5433` com as configurações:
 
 | Parâmetro | Valor |
 | --------- | ----- |
-| Database | `gestao_sei_db` |
+| Database | `gestaosei` |
 | Usuário | `postgres` |
 | Senha | `postgres` |
 

@@ -46,6 +46,7 @@ classDiagram
 ### 📊 **Gestão de Processos**
 - Cadastro, busca simplificada por termo único e filtros avançados.
 - **Agendamento Automático:** Verificação diária à meia-noite para processos vencidos.
+- **Importação e exportação CSV:** carga de processos por arquivo CSV e exportação completa dos registros cadastrados.
 
 ### 📈 **Relatórios Gerenciais**
 - Exportação em PDF via **JasperReports** com filtros dinâmicos e formatação PT-BR.
@@ -71,6 +72,24 @@ src/main/java/br/gov/gestaosei/gestao_sei_backend/
 2. **Swagger UI:** [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
 3. **Credenciais Iniciais:** `admin` / `admin123`
 
+## 🚀 Como Executar Localmente
+
+Se preferir rodar fora do Docker, suba apenas o banco com:
+
+```bash
+docker-compose up db -d
+```
+
+O PostgreSQL ficará disponível em `localhost:5433` com o banco `gestaosei`, usuário `postgres` e senha `postgres`.
+
+Depois, inicie a aplicação com:
+
+```bash
+./mvnw spring-boot:run
+```
+
+Se precisar apontar para outro banco, sobrescreva as variáveis `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`.
+
 ## 🧪 Testes
 O projeto conta com **22 testes unitários**.
 ```bash
@@ -78,8 +97,19 @@ O projeto conta com **22 testes unitários**.
 ```
 
 ## 💾 Backup Local
-Scripts PowerShell em `scripts/` para backups rápidos antes de importações:
-- `.\scripts\snapshot-dados.ps1` (Backup completo: SQL + CSVs)
+Scripts PowerShell em `scripts/` para backups e exportação rápida dos dados:
+- `.\scripts\snapshot-dados.ps1` (snapshot completo: backup SQL + exportação de processos + histórico)
+- `.\scripts\backup-bd.ps1` (dump do banco PostgreSQL)
+- `.\scripts\exportar-processos.ps1` (CSV dos processos)
+- `.\scripts\exportar-historico.ps1` (CSV do histórico de tramitação)
+
+### Exportação via API
+O backend também disponibiliza exportação direta dos processos cadastrados em CSV:
+
+- `GET /api/processos/exportar-csv`
+- Retorno: arquivo `processos.csv`
+- Colunas exportadas: `numeroProcesso`, `tipoProcesso`, `origem`, `unidadeAtual`, `status`, `dataPrazoFinal`, `observacao`
+- Valores com vírgula, aspas ou quebra de linha são escapados automaticamente
 
 ---
 Made with ❤️ by Gilvaneide Medeiros
