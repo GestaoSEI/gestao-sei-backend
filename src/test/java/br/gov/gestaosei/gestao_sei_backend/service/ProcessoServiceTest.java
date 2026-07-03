@@ -2,7 +2,9 @@ package br.gov.gestaosei.gestao_sei_backend.service;
 
 import br.gov.gestaosei.gestao_sei_backend.dto.ImportacaoResultadoDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoDTO;
+import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoFiltroDTO;
 import br.gov.gestaosei.gestao_sei_backend.model.Processo;
+import br.gov.gestaosei.gestao_sei_backend.model.StatusProcesso;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
 import br.gov.gestaosei.gestao_sei_backend.repository.HistoricoProcessoRepository;
 import br.gov.gestaosei.gestao_sei_backend.repository.ProcessoRepository;
@@ -57,7 +59,7 @@ class ProcessoServiceTest {
         processo.setTipoProcesso("Administrativo");
         processo.setOrigem("Protocolo");
         processo.setUnidadeAtual("Setor A");
-        processo.setStatus("Em andamento");
+        processo.setStatus(StatusProcesso.EM_ANDAMENTO);
         processo.setDataPrazoFinal(LocalDate.now().plusDays(10));
         processo.setObservacao("Teste");
 
@@ -84,6 +86,47 @@ class ProcessoServiceTest {
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
         assertEquals(processo.getNumeroProcesso(), resultado.get(0).getNumeroProcesso());
+    }
+
+    @Test
+    void filtrar_PorPrazoProximo_DeveIncluirProcessoEmAndamentoDentroDaJanela() {
+        Processo emAndamentoDentroDaJanela = new Processo();
+        emAndamentoDentroDaJanela.setNumeroProcesso("1111.2026/0000001-1");
+        emAndamentoDentroDaJanela.setTipoProcesso("Administrativo");
+        emAndamentoDentroDaJanela.setOrigem("Protocolo");
+        emAndamentoDentroDaJanela.setUnidadeAtual("Setor A");
+        emAndamentoDentroDaJanela.setStatus(StatusProcesso.EM_ANDAMENTO);
+        emAndamentoDentroDaJanela.setDataPrazoFinal(LocalDate.now().plusDays(3));
+
+        Processo emAndamentoForaDaJanela = new Processo();
+        emAndamentoForaDaJanela.setNumeroProcesso("2222.2026/0000002-2");
+        emAndamentoForaDaJanela.setTipoProcesso("Administrativo");
+        emAndamentoForaDaJanela.setOrigem("Protocolo");
+        emAndamentoForaDaJanela.setUnidadeAtual("Setor B");
+        emAndamentoForaDaJanela.setStatus(StatusProcesso.EM_ANDAMENTO);
+        emAndamentoForaDaJanela.setDataPrazoFinal(LocalDate.now().plusDays(10));
+
+        Processo expirado = new Processo();
+        expirado.setNumeroProcesso("3333.2026/0000003-3");
+        expirado.setTipoProcesso("Administrativo");
+        expirado.setOrigem("Protocolo");
+        expirado.setUnidadeAtual("Setor C");
+        expirado.setStatus(StatusProcesso.EM_ANDAMENTO);
+        expirado.setDataPrazoFinal(LocalDate.now().minusDays(1));
+
+        when(processoRepository.findAll()).thenReturn(Arrays.asList(
+                emAndamentoDentroDaJanela,
+                emAndamentoForaDaJanela,
+                expirado
+        ));
+
+        ProcessoFiltroDTO filtro = new ProcessoFiltroDTO();
+        filtro.setStatus(StatusProcesso.PRAZO_PROXIMO);
+
+        List<ProcessoDTO> resultado = processoService.filtrar(filtro);
+
+        assertEquals(1, resultado.size());
+        assertEquals("1111.2026/0000001-1", resultado.get(0).getNumeroProcesso());
     }
 
     @Test
@@ -130,9 +173,9 @@ class ProcessoServiceTest {
         mockUsuarioLogado();
         Processo processoNovo = new Processo();
         BeanUtils.copyProperties(processo, processoNovo);
-        processoNovo.setStatus("Concluído");
+        processoNovo.setStatus(StatusProcesso.CONCLUIDO);
 
-        processoDTO.setStatus("Concluído");
+        processoDTO.setStatus(StatusProcesso.CONCLUIDO);
 
         when(processoRepository.findByNumeroProcesso("12345/2023")).thenReturn(Optional.of(processo));
         when(processoRepository.save(any(Processo.class))).thenReturn(processoNovo);
@@ -140,7 +183,7 @@ class ProcessoServiceTest {
         ProcessoDTO resultado = processoService.atualizarPorNumero("12345/2023", processoDTO);
 
         assertNotNull(resultado);
-        assertEquals("Concluído", resultado.getStatus());
+        assertEquals(StatusProcesso.CONCLUIDO, resultado.getStatus());
         verify(historicoProcessoRepository, times(1)).save(any());
     }
 
@@ -207,8 +250,8 @@ class ProcessoServiceTest {
     @Test
     void toDTO_QuandoStatusFinalComPrazoCurto_NaoDeveAtivarAlertaUrgencia() {
         processo.setDataPrazoFinal(LocalDate.now().plusDays(2));
-        processo.setStatus("Concluído");
-        processoDTO.setStatus("Concluído");
+        processo.setStatus(StatusProcesso.CONCLUIDO);
+        processoDTO.setStatus(StatusProcesso.CONCLUIDO);
         when(processoRepository.save(any(Processo.class))).thenReturn(processo);
 
         ProcessoDTO resultado = processoService.salvar(processoDTO);
@@ -219,12 +262,25 @@ class ProcessoServiceTest {
     @Test
     void toDTO_QuandoStatusRespondidoComPrazoCurto_NaoDeveAtivarAlertaUrgencia() {
         processo.setDataPrazoFinal(LocalDate.now().plusDays(2));
-        processo.setStatus("Respondido");
-        processoDTO.setStatus("Respondido");
+        processo.setStatus(StatusProcesso.RESPONDIDO);
+        processoDTO.setStatus(StatusProcesso.RESPONDIDO);
         when(processoRepository.save(any(Processo.class))).thenReturn(processo);
 
         ProcessoDTO resultado = processoService.salvar(processoDTO);
 
         assertFalse(resultado.getAlertaUrgencia());
+    }
+
+    @Test
+    void toDTO_QuandoStatusPrazoProximoComPrazoCurto_DeveAtivarAlertaUrgencia() {
+        processo.setDataPrazoFinal(LocalDate.now().plusDays(3));
+        processo.setStatus(StatusProcesso.PRAZO_PROXIMO);
+        processoDTO.setStatus(StatusProcesso.PRAZO_PROXIMO);
+        when(processoRepository.save(any(Processo.class))).thenReturn(processo);
+
+        ProcessoDTO resultado = processoService.salvar(processoDTO);
+
+        assertTrue(resultado.getAlertaUrgencia());
+        assertEquals(StatusProcesso.PRAZO_PROXIMO, resultado.getStatus());
     }
 }

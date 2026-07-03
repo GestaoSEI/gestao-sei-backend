@@ -6,6 +6,7 @@ import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoDTO;
 import br.gov.gestaosei.gestao_sei_backend.dto.ProcessoFiltroDTO;
 import br.gov.gestaosei.gestao_sei_backend.model.HistoricoProcesso;
 import br.gov.gestaosei.gestao_sei_backend.model.Processo;
+import br.gov.gestaosei.gestao_sei_backend.model.StatusProcesso;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
 import br.gov.gestaosei.gestao_sei_backend.repository.HistoricoProcessoRepository;
 import br.gov.gestaosei.gestao_sei_backend.repository.ProcessoRepository;
@@ -18,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -41,16 +41,21 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProcessoServiceImpl implements ProcessoService {
-    private static final String NUMERO_PROCESSO_REGEX = "^\\d{4}\\.\\d{4}/\\d{7}-\\d$";
-
+    
+    private static final String NUMERO_PROCESSO_REGEX = "\\d{4}\\.\\d{4}/\\d{7}-\\d";
+    
     private final ProcessoRepository processoRepository;
+    private final AgendamentoService agendamentoService;  // ✅ Nova injeção
     private final HistoricoProcessoRepository historicoProcessoRepository;
 
-    public ProcessoServiceImpl(ProcessoRepository processoRepository, HistoricoProcessoRepository historicoProcessoRepository) {
+    public ProcessoServiceImpl(ProcessoRepository processoRepository, 
+                              AgendamentoService agendamentoService,
+                              HistoricoProcessoRepository historicoProcessoRepository) {
         this.processoRepository = processoRepository;
+        this.agendamentoService = agendamentoService;
         this.historicoProcessoRepository = historicoProcessoRepository;
     }
-
+    
     @Override
     public List<ProcessoDTO> filtrar(ProcessoFiltroDTO filtro) {
         if (filtro == null) {
@@ -64,9 +69,15 @@ public class ProcessoServiceImpl implements ProcessoService {
 
         if (filtro.getStatus() != null && !filtro.getStatus().isBlank()) {
             String statusNormalizado = normalizarStatus(filtro.getStatus());
-            processos = processos.stream()
-                .filter(p -> p.getStatus() != null && normalizarStatus(p.getStatus()).equalsIgnoreCase(statusNormalizado))
-                    .collect(Collectors.toList());
+            if (StatusProcesso.PRAZO_PROXIMO.equalsIgnoreCase(statusNormalizado)) {
+                processos = processos.stream()
+                        .filter(p -> isPrazoProximoNoFiltro(p, hoje))
+                        .collect(Collectors.toList());
+            } else {
+                processos = processos.stream()
+                    .filter(p -> p.getStatus() != null && normalizarStatus(p.getStatus()).equalsIgnoreCase(statusNormalizado))
+                        .collect(Collectors.toList());
+            }
         }
 
         if (filtro.getUnidadeAtual() != null && !filtro.getUnidadeAtual().isBlank()) {
@@ -170,26 +181,36 @@ public class ProcessoServiceImpl implements ProcessoService {
     }
 
     private ProcessoDTO atualizarProcessoExistente(Processo processoExistente, ProcessoDTO processoDTO) {
-        // Guarda os valores antigos para comparação
         String statusAnterior = normalizarStatus(processoExistente.getStatus());
         String unidadeAnterior = processoExistente.getUnidadeAtual();
+        LocalDate dataPrazoAnterior = processoExistente.getDataPrazoFinal();
 
         processoDTO.setStatus(normalizarStatus(processoDTO.getStatus()));
 
-        // Atualiza o processo com os novos dados
-        // Preserva o ID original e o flag de duplicata
+        // Atualiza dados
         Long idOriginal = processoExistente.getId();
         boolean duplicataOriginal = processoExistente.isDuplicata();
         BeanUtils.copyProperties(processoDTO, processoExistente, "id", "duplicata");
         processoExistente.setDuplicata(duplicataOriginal);
         processoExistente.setId(idOriginal);
         
+        // ✅ AQUI: Salvar ANTES
         Processo processoAtualizado = processoRepository.save(processoExistente);
 
-        // Obtém o usuário logado
-        Usuario usuarioLogado = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        // ✅ NOVO: Recalcular status se houver mudança na data de prazo
+        if (processoDTO.getDataPrazoFinal() != null && 
+            !Objects.equals(dataPrazoAnterior, processoDTO.getDataPrazoFinal())) {
+            
+            String novoStatus = agendamentoService.recalcularStatusQuandoDataMuda(processoAtualizado);
+            if (novoStatus != null) {
+                processoAtualizado.setStatus(novoStatus);
+                processoAtualizado = processoRepository.save(processoAtualizado);
+            }
+        }
 
-        // Compara e registra o histórico
+        // Registra histórico...
+        Usuario usuarioLogado = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        
         boolean statusMudou = !Objects.equals(statusAnterior, normalizarStatus(processoAtualizado.getStatus()));
         boolean unidadeMudou = !Objects.equals(unidadeAnterior, processoAtualizado.getUnidadeAtual());
 
@@ -201,7 +222,7 @@ public class ProcessoServiceImpl implements ProcessoService {
                     statusMudou ? normalizarStatus(processoAtualizado.getStatus()) : null,
                     unidadeMudou ? unidadeAnterior : null,
                     unidadeMudou ? processoAtualizado.getUnidadeAtual() : null,
-                    processoDTO.getObservacao() // Usamos a observação do DTO como a "observação da mudança"
+                    processoDTO.getObservacao()
             );
             historicoProcessoRepository.save(historico);
         }
@@ -567,8 +588,8 @@ public class ProcessoServiceImpl implements ProcessoService {
         dto.setNumeroProcesso(normalizarNumeroProcesso(dto.getNumeroProcesso()));
         dto.setStatus(normalizarStatus(dto.getStatus()));
         
-        // Calcula o alerta de prazo apenas para processos "Em andamento"
-        if (processo.getDataPrazoFinal() != null && isStatusAtivo(processo.getStatus())) {
+        // Calcula o alerta de prazo para processos em andamento ou já marcados como prazo próximo
+        if (processo.getDataPrazoFinal() != null && isStatusComAlerta(processo.getStatus())) {
             long diasParaVencer = ChronoUnit.DAYS.between(LocalDate.now(), processo.getDataPrazoFinal());
             // Alerta se vencer em 5 dias ou menos (incluindo vencidos)
             dto.setAlertaUrgencia(diasParaVencer <= 5);
@@ -579,10 +600,21 @@ public class ProcessoServiceImpl implements ProcessoService {
         return dto;
     }
 
-    private boolean isStatusAtivo(String status) {
+    private boolean isStatusComAlerta(String status) {
         status = normalizarStatus(status);
         if (status == null) return false;
-        return "Em andamento".equalsIgnoreCase(status);
+        return StatusProcesso.STATUS_FLUXO_PRAZO.stream().anyMatch(status::equalsIgnoreCase);
+    }
+
+    private boolean isPrazoProximoNoFiltro(Processo processo, LocalDate hoje) {
+        if (processo == null || processo.getDataPrazoFinal() == null) {
+            return false;
+        }
+        if (!isStatusComAlerta(processo.getStatus())) {
+            return false;
+        }
+        LocalDate prazoFinal = processo.getDataPrazoFinal();
+        return !prazoFinal.isBefore(hoje) && !prazoFinal.isAfter(hoje.plusDays(5));
     }
 
     private Processo toEntity(ProcessoDTO dto) {
@@ -606,25 +638,25 @@ public class ProcessoServiceImpl implements ProcessoService {
         String valor = status.trim();
         String valorLower = valor.toLowerCase();
         if (valor.equalsIgnoreCase("Respondido - Encerrado")) {
-            return "Encerrado";
+            return StatusProcesso.ENCERRADO;
         }
         if (valorLower.startsWith("respondido")) {
-            return "Respondido";
+            return StatusProcesso.RESPONDIDO;
         }
         if (valorLower.startsWith("conclus") || valorLower.startsWith("conclu")) {
-            return "Concluído";
+            return StatusProcesso.CONCLUIDO;
         }
         if (valorLower.startsWith("encerrado")) {
-            return "Encerrado";
+            return StatusProcesso.ENCERRADO;
         }
-        if (valorLower.startsWith("encaminh")) {
-            return "Em andamento";
+        if (valorLower.startsWith("encaminh") || valorLower.startsWith("aguard") || valorLower.startsWith("em")) {
+            return StatusProcesso.EM_ANDAMENTO;
         }
-        if (valorLower.startsWith("aguard")) {
-            return "Em andamento";
+        if (valorLower.startsWith("prazo")) {
+            return StatusProcesso.PRAZO_PROXIMO;
         }
         if (valorLower.startsWith("expirado")) {
-            return "Expirado";
+            return StatusProcesso.EXPIRADO;
         }
         return valor;
     }

@@ -16,6 +16,7 @@ public interface ProcessoRepository extends JpaRepository<Processo, Long> {
     List<Processo> findByNumeroProcessoContaining(String numeroProcesso);
 
     List<Processo> findByStatus(String status);
+    List<Processo> findByStatusInAndDataPrazoFinalIsNotNull(List<String> status);
     
     // Alterado para busca parcial (LIKE) e ignorando maiúsculas/minúsculas
     List<Processo> findByUnidadeAtualContainingIgnoreCase(String unidadeAtual);
