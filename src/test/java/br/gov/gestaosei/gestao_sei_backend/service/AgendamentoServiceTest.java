@@ -71,4 +71,17 @@ class AgendamentoServiceTest {
         assertEquals(StatusProcesso.EM_ANDAMENTO, emAndamento.getStatus());
         assertEquals(StatusProcesso.CONCLUIDO, concluido.getStatus());
     }
+
+    @Test
+    void atualizarStatusFluxoPrazo_DeveAtualizarStatusConformePrazo() {
+        when(processoRepository.findByStatusInAndDataPrazoFinalIsNotNull(List.of(StatusProcesso.EM_ANDAMENTO, StatusProcesso.PRAZO_PROXIMO)))
+                .thenReturn(List.of(emAndamento, prazoProximo, vencido));
+        when(processoRepository.save(any(Processo.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        agendamentoService.atualizarStatusFluxoPrazo();
+
+        verify(processoRepository, times(2)).save(any(Processo.class));
+        assertEquals(StatusProcesso.PRAZO_PROXIMO, prazoProximo.getStatus());
+        assertEquals(StatusProcesso.EXPIRADO, vencido.getStatus());
+    }
 }

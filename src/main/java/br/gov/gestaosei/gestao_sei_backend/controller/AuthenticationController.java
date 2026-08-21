@@ -6,6 +6,7 @@ import br.gov.gestaosei.gestao_sei_backend.dto.ResetPasswordDTO;
 import br.gov.gestaosei.gestao_sei_backend.exception.ErrorResponse;
 import br.gov.gestaosei.gestao_sei_backend.model.Usuario;
 import br.gov.gestaosei.gestao_sei_backend.repository.UsuarioRepository;
+import br.gov.gestaosei.gestao_sei_backend.service.AgendamentoService;
 import br.gov.gestaosei.gestao_sei_backend.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,6 +41,9 @@ public class AuthenticationController {
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private AgendamentoService agendamentoService;
 
     @PostMapping("/login")
     @Operation(
@@ -92,6 +96,9 @@ public class AuthenticationController {
             @RequestBody @Valid AuthenticationDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.login(), data.senha());
         var auth = authenticationManager.authenticate(usernamePassword);
+
+        // No login, aplica atualização automática de status vencido do fluxo de prazo.
+        agendamentoService.atualizarStatusFluxoPrazo();
 
         var token = tokenService.generateToken((Usuario) auth.getPrincipal());
 

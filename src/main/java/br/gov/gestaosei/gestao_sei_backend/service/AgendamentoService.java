@@ -24,6 +24,11 @@ public class AgendamentoService {
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void verificarProcessosVencidos() {
+        atualizarStatusFluxoPrazo();
+    }
+
+    @Transactional
+    public void atualizarStatusFluxoPrazo() {
         LocalDate hoje = LocalDate.now();
 
         // Recalcula o status apenas dos processos que participam do fluxo de prazo
@@ -109,5 +114,9 @@ public class AgendamentoService {
     public String recalcularStatusSeNecessario(Processo processo) {
         LocalDate hoje = LocalDate.now();
         return calcularStatusAutomatico(processo, hoje);
+    }
+
+    public String recalcularStatusQuandoDataMuda(Processo processo) {
+        return recalcularStatusSeNecessario(processo);
     }
 }

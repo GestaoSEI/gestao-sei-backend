@@ -39,6 +39,9 @@ class ProcessoServiceTest {
     private HistoricoProcessoRepository historicoProcessoRepository;
 
     @Mock
+    private AgendamentoService agendamentoService;
+
+    @Mock
     private SecurityContext securityContext;
 
     @Mock
@@ -144,11 +147,38 @@ class ProcessoServiceTest {
     @Test
     void salvar_DeveRetornarProcessoSalvo() {
         when(processoRepository.save(any(Processo.class))).thenReturn(processo);
+        doNothing().when(agendamentoService).atualizarStatusFluxoPrazo();
 
         ProcessoDTO resultado = processoService.salvar(processoDTO);
 
         assertNotNull(resultado);
         assertEquals(processoDTO.getNumeroProcesso(), resultado.getNumeroProcesso());
+        verify(agendamentoService, times(1)).atualizarStatusFluxoPrazo();
+    }
+
+    @Test
+    void salvar_ComPrazoVencidoDeveRetornarExpirado() {
+        processoDTO.setStatus(StatusProcesso.EM_ANDAMENTO);
+        processoDTO.setDataPrazoFinal(LocalDate.now().minusDays(1));
+
+        Processo processoSalvo = new Processo();
+        BeanUtils.copyProperties(processoDTO, processoSalvo);
+
+        Processo processoExpirado = new Processo();
+        BeanUtils.copyProperties(processoDTO, processoExpirado);
+        processoExpirado.setStatus(StatusProcesso.EXPIRADO);
+
+        when(processoRepository.save(any(Processo.class)))
+                .thenReturn(processoSalvo)
+                .thenReturn(processoExpirado);
+        when(agendamentoService.recalcularStatusSeNecessario(any(Processo.class))).thenReturn(StatusProcesso.EXPIRADO);
+        doNothing().when(agendamentoService).atualizarStatusFluxoPrazo();
+
+        ProcessoDTO resultado = processoService.salvar(processoDTO);
+
+        assertNotNull(resultado);
+        assertEquals(StatusProcesso.EXPIRADO, resultado.getStatus());
+        verify(agendamentoService, times(1)).atualizarStatusFluxoPrazo();
     }
 
     @Test

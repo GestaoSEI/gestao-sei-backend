@@ -159,6 +159,16 @@ public class ProcessoServiceImpl implements ProcessoService {
         Processo processo = toEntity(processoDTO);
         processo.setNumeroProcesso(numeroNormalizado);
         processo = processoRepository.save(processo);
+
+        String statusRecalculado = agendamentoService.recalcularStatusSeNecessario(processo);
+        if (statusRecalculado != null && !statusRecalculado.equalsIgnoreCase(processo.getStatus())) {
+            processo.setStatus(statusRecalculado);
+            processo = processoRepository.save(processo);
+        }
+
+        // Garante atualização automática dos vencidos também no fluxo de cadastro.
+        agendamentoService.atualizarStatusFluxoPrazo();
+
         return toDTO(processo);
     }
 
