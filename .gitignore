@@ -37,6 +37,8 @@ build/
 
 # Log file
 *.log
+*-logs.txt
+runlog.txt
 
 # BlueJ files
 *.ctxt
