@@ -58,56 +58,57 @@ public class ProcessoServiceImpl implements ProcessoService {
     
     @Override
     public List<ProcessoDTO> filtrar(ProcessoFiltroDTO filtro) {
-        if (filtro == null) {
-            return listarTodos();
-        }
+    if (filtro == null) {
+        return listarTodos();
+    }
 
-        LocalDate hoje = LocalDate.now();
+    LocalDate hoje = LocalDate.now();
 
-        // Parte de todos e aplica cada filtro de forma acumulativa
-        List<Processo> processos = processoRepository.findAll();
+    // Parte de todos e aplica cada filtro de forma acumulativa
+    List<Processo> processos = processoRepository.findAll();
 
-        if (filtro.getStatus() != null && !filtro.getStatus().isBlank()) {
-            String statusNormalizado = normalizarStatus(filtro.getStatus());
-            if (StatusProcesso.PRAZO_PROXIMO.equalsIgnoreCase(statusNormalizado)) {
-                processos = processos.stream()
-                        .filter(p -> isPrazoProximoNoFiltro(p, hoje))
-                        .collect(Collectors.toList());
-            } else {
-                processos = processos.stream()
-                    .filter(p -> p.getStatus() != null && normalizarStatus(p.getStatus()).equalsIgnoreCase(statusNormalizado))
-                        .collect(Collectors.toList());
-            }
-        }
-
-        if (filtro.getUnidadeAtual() != null && !filtro.getUnidadeAtual().isBlank()) {
-            String unidadeLower = filtro.getUnidadeAtual().toLowerCase();
+    if (filtro.getStatus() != null && !filtro.getStatus().isBlank()) {
+        String statusFiltro = filtro.getStatus().trim();
+        
+        if (StatusProcesso.PRAZO_PROXIMO.equalsIgnoreCase(statusFiltro)) {
             processos = processos.stream()
-                    .filter(p -> p.getUnidadeAtual() != null && p.getUnidadeAtual().toLowerCase().contains(unidadeLower))
+                    .filter(p -> isPrazoProximoNoFiltro(p, hoje))
+                    .collect(Collectors.toList());
+        } else {
+            processos = processos.stream()
+                .filter(p -> p.getStatus() != null && p.getStatus().trim().equalsIgnoreCase(statusFiltro))
                     .collect(Collectors.toList());
         }
+    }
 
-        if (Boolean.TRUE.equals(filtro.getPrazoExpirado())) {
-            processos = processos.stream()
-                    .filter(p -> p.getDataPrazoFinal() != null && p.getDataPrazoFinal().isBefore(hoje))
-                    .collect(Collectors.toList());
-        }
-
-        if (filtro.getDataInicio() != null) {
-            processos = processos.stream()
-                    .filter(p -> p.getDataPrazoFinal() != null && !p.getDataPrazoFinal().isBefore(filtro.getDataInicio()))
-                    .collect(Collectors.toList());
-        }
-
-        if (filtro.getDataFim() != null) {
-            processos = processos.stream()
-                    .filter(p -> p.getDataPrazoFinal() != null && !p.getDataPrazoFinal().isAfter(filtro.getDataFim()))
-                    .collect(Collectors.toList());
-        }
-
-        return processos.stream()
-                .map(this::toDTO)
+    if (filtro.getUnidadeAtual() != null && !filtro.getUnidadeAtual().isBlank()) {
+        String unidadeLower = filtro.getUnidadeAtual().toLowerCase();
+        processos = processos.stream()
+                .filter(p -> p.getUnidadeAtual() != null && p.getUnidadeAtual().toLowerCase().contains(unidadeLower))
                 .collect(Collectors.toList());
+    }
+
+    if (Boolean.TRUE.equals(filtro.getPrazoExpirado())) {
+        processos = processos.stream()
+                .filter(p -> p.getDataPrazoFinal() != null && p.getDataPrazoFinal().isBefore(hoje))
+                .collect(Collectors.toList());
+    }
+
+    if (filtro.getDataInicio() != null) {
+        processos = processos.stream()
+                .filter(p -> p.getDataPrazoFinal() != null && !p.getDataPrazoFinal().isBefore(filtro.getDataInicio()))
+                .collect(Collectors.toList());
+    }
+
+    if (filtro.getDataFim() != null) {
+        processos = processos.stream()
+                .filter(p -> p.getDataPrazoFinal() != null && !p.getDataPrazoFinal().isAfter(filtro.getDataFim()))
+                .collect(Collectors.toList());
+    }
+
+    return processos.stream()
+            .map(this::toDTO)
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -172,6 +173,15 @@ public class ProcessoServiceImpl implements ProcessoService {
         return toDTO(processo);
     }
 
+        private Processo toEntity(ProcessoDTO dto) {
+            Processo processo = new Processo();
+            BeanUtils.copyProperties(dto, processo);
+            if (dto.getStatus() != null) {
+                processo.setStatus(dto.getStatus().trim());
+            }
+            return processo;
+        }
+
     @Override
     @Transactional
     public ProcessoDTO atualizar(Long id, ProcessoDTO processoDTO) {
@@ -191,11 +201,10 @@ public class ProcessoServiceImpl implements ProcessoService {
     }
 
     private ProcessoDTO atualizarProcessoExistente(Processo processoExistente, ProcessoDTO processoDTO) {
-        String statusAnterior = normalizarStatus(processoExistente.getStatus());
+        String statusAnterior = processoExistente.getStatus();
         String unidadeAnterior = processoExistente.getUnidadeAtual();
         LocalDate dataPrazoAnterior = processoExistente.getDataPrazoFinal();
-
-        processoDTO.setStatus(normalizarStatus(processoDTO.getStatus()));
+        processoDTO.setStatus(processoDTO.getStatus());
 
         // Atualiza dados
         Long idOriginal = processoExistente.getId();
@@ -220,21 +229,21 @@ public class ProcessoServiceImpl implements ProcessoService {
 
         // Registra histórico...
         Usuario usuarioLogado = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        
-        boolean statusMudou = !Objects.equals(statusAnterior, normalizarStatus(processoAtualizado.getStatus()));
+
+        boolean statusMudou = !Objects.equals(statusAnterior, processoAtualizado.getStatus());
         boolean unidadeMudou = !Objects.equals(unidadeAnterior, processoAtualizado.getUnidadeAtual());
 
-        if (statusMudou || unidadeMudou) {
-            HistoricoProcesso historico = new HistoricoProcesso(
-                    processoAtualizado,
-                    usuarioLogado,
-                    statusMudou ? statusAnterior : null,
-                    statusMudou ? normalizarStatus(processoAtualizado.getStatus()) : null,
-                    unidadeMudou ? unidadeAnterior : null,
-                    unidadeMudou ? processoAtualizado.getUnidadeAtual() : null,
-                    processoDTO.getObservacao()
-            );
-            historicoProcessoRepository.save(historico);
+       if (statusMudou || unidadeMudou) {
+        HistoricoProcesso historico = new HistoricoProcesso(
+            processoAtualizado,
+            usuarioLogado,
+            statusMudou ? statusAnterior : null,
+            statusMudou ? processoAtualizado.getStatus() : null,
+            unidadeMudou ? unidadeAnterior : null,
+            unidadeMudou ? processoAtualizado.getUnidadeAtual() : null,
+            processoDTO.getObservacao()
+        );
+        historicoProcessoRepository.save(historico);
         }
 
         return toDTO(processoAtualizado);
@@ -320,7 +329,7 @@ public class ProcessoServiceImpl implements ProcessoService {
                 String tipoProcesso = valorCampo(campos, idxTipo);
                 String origem = valorCampo(campos, idxOrigem);
                 String unidadeAtual = valorCampo(campos, idxUnidade);
-                String status = normalizarStatus(valorCampo(campos, idxStatus));
+                String status = valorCampo(campos, idxStatus);
                 String dataPrazo = valorCampo(campos, idxDataPrazo);
                 String observacao = valorCampo(campos, idxObservacao);
                 try {
@@ -522,36 +531,36 @@ public class ProcessoServiceImpl implements ProcessoService {
     }
 
     private boolean atualizarProcessoComDadosCsv(
-            Processo processo,
-            String tipoProcesso,
-            String origem,
-            String unidadeAtual,
-            String status,
-            String dataPrazo,
-            String observacao,
-            DateTimeFormatter formatterBr
+        Processo processo,
+        String tipoProcesso,
+        String origem,
+        String unidadeAtual,
+        String status,
+        String dataPrazo,
+        String observacao,
+        DateTimeFormatter formatterBr
     ) {
-        boolean alterou = false;
+    boolean alterou = false;
 
-        alterou |= atualizarTextoNaoVazio(processo::getTipoProcesso, processo::setTipoProcesso, tipoProcesso);
-        alterou |= atualizarTextoNaoVazio(processo::getOrigem, processo::setOrigem, origem);
-        alterou |= atualizarTextoNaoVazio(processo::getUnidadeAtual, processo::setUnidadeAtual, unidadeAtual);
-        alterou |= atualizarTextoNaoVazio(
-            () -> normalizarStatus(processo.getStatus()),
-            processo::setStatus,
-            normalizarStatus(status)
-        );
-        alterou |= atualizarTextoNaoVazio(processo::getObservacao, processo::setObservacao, observacao);
+    alterou |= atualizarTextoNaoVazio(processo::getTipoProcesso, processo::setTipoProcesso, tipoProcesso);
+    alterou |= atualizarTextoNaoVazio(processo::getOrigem, processo::setOrigem, origem);
+    alterou |= atualizarTextoNaoVazio(processo::getUnidadeAtual, processo::setUnidadeAtual, unidadeAtual);
+    
+    // Tratamento direto sem o normalizarStatus
+    String statusLimpo = status != null ? status.trim() : null;
+    alterou |= atualizarTextoNaoVazio(processo::getStatus, processo::setStatus, statusLimpo);
+    
+    alterou |= atualizarTextoNaoVazio(processo::getObservacao, processo::setObservacao, observacao);
 
-        if (!dataPrazo.isBlank()) {
-            LocalDate novaData = parseData(dataPrazo, formatterBr);
-            if (!Objects.equals(novaData, processo.getDataPrazoFinal())) {
-                processo.setDataPrazoFinal(novaData);
-                alterou = true;
-            }
+    if (!dataPrazo.isBlank()) {
+        LocalDate novaData = parseData(dataPrazo, formatterBr);
+        if (!Objects.equals(novaData, processo.getDataPrazoFinal())) {
+            processo.setDataPrazoFinal(novaData);
+            alterou = true;
         }
+    }
 
-        return alterou;
+    return alterou;
     }
 
     private boolean atualizarTextoNaoVazio(java.util.function.Supplier<String> getter,
@@ -580,12 +589,12 @@ public class ProcessoServiceImpl implements ProcessoService {
     }
 
     private boolean contemPalavraChave(Processo processo, String keywordNormalizada) {
-        return contemTexto(processo.getNumeroProcesso(), keywordNormalizada)
-                || contemTexto(processo.getTipoProcesso(), keywordNormalizada)
-                || contemTexto(processo.getOrigem(), keywordNormalizada)
-                || contemTexto(processo.getUnidadeAtual(), keywordNormalizada)
-                || contemTexto(normalizarStatus(processo.getStatus()), keywordNormalizada)
-                || contemTexto(processo.getObservacao(), keywordNormalizada);
+    return contemTexto(processo.getNumeroProcesso(), keywordNormalizada)
+            || contemTexto(processo.getTipoProcesso(), keywordNormalizada)
+            || contemTexto(processo.getOrigem(), keywordNormalizada)
+            || contemTexto(processo.getUnidadeAtual(), keywordNormalizada)
+            || contemTexto(processo.getStatus(), keywordNormalizada)
+            || contemTexto(processo.getObservacao(), keywordNormalizada);
     }
 
     private boolean contemTexto(String valor, String keywordNormalizada) {
@@ -595,25 +604,40 @@ public class ProcessoServiceImpl implements ProcessoService {
     private ProcessoDTO toDTO(Processo processo) {
         ProcessoDTO dto = new ProcessoDTO();
         BeanUtils.copyProperties(processo, dto);
-        dto.setNumeroProcesso(normalizarNumeroProcesso(dto.getNumeroProcesso()));
-        dto.setStatus(normalizarStatus(dto.getStatus()));
+        dto.setNumeroProcesso(normalizarNumeroProcesso(dto.getNumeroProcesso()));     
+
+    // Calcula o alerta de prazo e atualiza o status dinamicamente
+    if (processo.getDataPrazoFinal() != null && isStatusComAlerta(processo.getStatus())) {
+        long diasParaVencer = ChronoUnit.DAYS.between(LocalDate.now(), processo.getDataPrazoFinal());
+        boolean ehUrgente = diasParaVencer <= 5;
         
-        // Calcula o alerta de prazo para processos em andamento ou já marcados como prazo próximo
-        if (processo.getDataPrazoFinal() != null && isStatusComAlerta(processo.getStatus())) {
-            long diasParaVencer = ChronoUnit.DAYS.between(LocalDate.now(), processo.getDataPrazoFinal());
-            // Alerta se vencer em 5 dias ou menos (incluindo vencidos)
-            dto.setAlertaUrgencia(diasParaVencer <= 5);
-        } else {
-            dto.setAlertaUrgencia(false);
+        dto.setAlertaUrgencia(ehUrgente);
+
+        // Se falta até 5 dias e não está vencido (diasParaVencer >= 0), define o status como "Prazo próximo"
+        if (ehUrgente && diasParaVencer >= 0) {
+            dto.setStatus("Prazo próximo");
         }
-        
-        return dto;
+    } else {
+        dto.setAlertaUrgencia(false);
+    }
+
+    return dto;
     }
 
     private boolean isStatusComAlerta(String status) {
-        status = normalizarStatus(status);
-        if (status == null) return false;
-        return StatusProcesso.STATUS_FLUXO_PRAZO.stream().anyMatch(status::equalsIgnoreCase);
+    if (status == null || status.isBlank()) return false;
+
+    // Normaliza a string recebida (remove acentos e transforma em minúsculo)
+    String statusTratado = Normalizer.normalize(status.trim(), Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "")
+            .toLowerCase();
+
+    // Compara com a lista STATUS_FLUXO_PRAZO aplicando a mesma normalização
+    return StatusProcesso.STATUS_FLUXO_PRAZO.stream()
+            .map(s -> Normalizer.normalize(s.trim(), Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "")
+                    .toLowerCase())
+            .anyMatch(statusTratado::equals);
     }
 
     private boolean isPrazoProximoNoFiltro(Processo processo, LocalDate hoje) {
@@ -623,51 +647,32 @@ public class ProcessoServiceImpl implements ProcessoService {
         if (!isStatusComAlerta(processo.getStatus())) {
             return false;
         }
-        LocalDate prazoFinal = processo.getDataPrazoFinal();
-        return !prazoFinal.isBefore(hoje) && !prazoFinal.isAfter(hoje.plusDays(5));
-    }
 
-    private Processo toEntity(ProcessoDTO dto) {
-        Processo processo = new Processo();
-        BeanUtils.copyProperties(dto, processo);
-        processo.setStatus(normalizarStatus(processo.getStatus()));
-        return processo;
+        LocalDate prazoFinal = processo.getDataPrazoFinal();
+        if (prazoFinal.isBefore(hoje)) {
+            return false;
+        }
+
+        String statusTratado = Normalizer.normalize(processo.getStatus().trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+        String prazoProximoTratado = Normalizer.normalize(StatusProcesso.PRAZO_PROXIMO, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+        String emAndamentoTratado = Normalizer.normalize(StatusProcesso.EM_ANDAMENTO, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+
+        if (statusTratado.equals(prazoProximoTratado)) {
+            return true;
+        }
+
+        return statusTratado.equals(emAndamentoTratado)
+                && !prazoFinal.isAfter(hoje.plusDays(5));
     }
 
     private HistoricoProcessoDTO toHistoricoDTO(HistoricoProcesso historico) {
-        HistoricoProcessoDTO dto = new HistoricoProcessoDTO(historico);
-        dto.setStatusAnterior(normalizarStatus(dto.getStatusAnterior()));
-        dto.setStatusNovo(normalizarStatus(dto.getStatusNovo()));
-        return dto;
-    }
+    return new HistoricoProcessoDTO(historico);
+    }    
 
-    private String normalizarStatus(String status) {
-        if (status == null) {
-            return null;
-        }
-        String valor = status.trim();
-        String valorLower = valor.toLowerCase();
-        if (valor.equalsIgnoreCase("Respondido - Encerrado")) {
-            return StatusProcesso.ENCERRADO;
-        }
-        if (valorLower.startsWith("respondido")) {
-            return StatusProcesso.RESPONDIDO;
-        }
-        if (valorLower.startsWith("conclus") || valorLower.startsWith("conclu")) {
-            return StatusProcesso.CONCLUIDO;
-        }
-        if (valorLower.startsWith("encerrado")) {
-            return StatusProcesso.ENCERRADO;
-        }
-        if (valorLower.startsWith("encaminh") || valorLower.startsWith("aguard") || valorLower.startsWith("em")) {
-            return StatusProcesso.EM_ANDAMENTO;
-        }
-        if (valorLower.startsWith("prazo")) {
-            return StatusProcesso.PRAZO_PROXIMO;
-        }
-        if (valorLower.startsWith("expirado")) {
-            return StatusProcesso.EXPIRADO;
-        }
-        return valor;
-    }
 }

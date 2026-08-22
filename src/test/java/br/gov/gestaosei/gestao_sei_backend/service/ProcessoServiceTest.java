@@ -109,6 +109,14 @@ class ProcessoServiceTest {
         emAndamentoForaDaJanela.setStatus(StatusProcesso.EM_ANDAMENTO);
         emAndamentoForaDaJanela.setDataPrazoFinal(LocalDate.now().plusDays(10));
 
+        Processo prazoProximoForaDaJanela = new Processo();
+        prazoProximoForaDaJanela.setNumeroProcesso("4444.2026/0000004-4");
+        prazoProximoForaDaJanela.setTipoProcesso("Administrativo");
+        prazoProximoForaDaJanela.setOrigem("Protocolo");
+        prazoProximoForaDaJanela.setUnidadeAtual("Setor D");
+        prazoProximoForaDaJanela.setStatus(StatusProcesso.PRAZO_PROXIMO);
+        prazoProximoForaDaJanela.setDataPrazoFinal(LocalDate.now().plusDays(10));
+
         Processo expirado = new Processo();
         expirado.setNumeroProcesso("3333.2026/0000003-3");
         expirado.setTipoProcesso("Administrativo");
@@ -120,6 +128,7 @@ class ProcessoServiceTest {
         when(processoRepository.findAll()).thenReturn(Arrays.asList(
                 emAndamentoDentroDaJanela,
                 emAndamentoForaDaJanela,
+            prazoProximoForaDaJanela,
                 expirado
         ));
 
@@ -128,8 +137,10 @@ class ProcessoServiceTest {
 
         List<ProcessoDTO> resultado = processoService.filtrar(filtro);
 
-        assertEquals(1, resultado.size());
-        assertEquals("1111.2026/0000001-1", resultado.get(0).getNumeroProcesso());
+        assertEquals(2, resultado.size());
+        List<String> numeros = resultado.stream().map(ProcessoDTO::getNumeroProcesso).toList();
+        assertTrue(numeros.contains("1111.2026/0000001-1"));
+        assertTrue(numeros.contains("4444.2026/0000004-4"));
     }
 
     @Test
