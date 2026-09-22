@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/processos")
@@ -151,17 +152,20 @@ public class ProcessoController {
         try {
             List<ProcessoDTO> processos;
 
-            if (keyword != null && !keyword.isEmpty()) {
-                processos = processoService.buscarPorPalavraChave(keyword);
-            } else {
-                ProcessoFiltroDTO filtro = new ProcessoFiltroDTO(status, unidade, prazoExpirado, dataInicio, dataFim);
-                processos = processoService.filtrar(filtro);
+            ProcessoFiltroDTO filtro = new ProcessoFiltroDTO(status, unidade, prazoExpirado, dataInicio, dataFim);
+            processos = processoService.filtrar(filtro);
+
+            if (keyword != null && !keyword.isBlank()) {
+                String keywordNormalizada = keyword.trim().toLowerCase(Locale.ROOT);
+                processos = processos.stream()
+                        .filter(processo -> contemPalavraChave(processo, keywordNormalizada))
+                        .toList();
             }
 
-            processos.sort(
-                    Comparator.comparing(ProcessoDTO::getDataPrazoFinal,
-                                    Comparator.nullsLast(Comparator.reverseOrder()))
-            );
+            processos = processos.stream()
+                    .sorted(Comparator.comparing(ProcessoDTO::getDataPrazoFinal,
+                            Comparator.nullsLast(Comparator.reverseOrder())))
+                    .toList();
 
             byte[] pdfBytes = relatorioService.gerarRelatorioProcessos(processos);
 
@@ -177,6 +181,19 @@ public class ProcessoController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private boolean contemPalavraChave(ProcessoDTO processo, String keyword) {
+        return contem(processo.getNumeroProcesso(), keyword)
+                || contem(processo.getTipoProcesso(), keyword)
+                || contem(processo.getOrigem(), keyword)
+                || contem(processo.getUnidadeAtual(), keyword)
+                || contem(processo.getStatus(), keyword)
+                || contem(processo.getObservacao(), keyword);
+    }
+
+    private boolean contem(String valor, String keyword) {
+        return valor != null && valor.toLowerCase(Locale.ROOT).contains(keyword);
     }
 
     @Operation(summary = "Exportar processos para CSV",
