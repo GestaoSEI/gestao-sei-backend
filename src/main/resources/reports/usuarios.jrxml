@@ -135,7 +135,7 @@
 					<textElement verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>
-					<textFieldExpression><![CDATA["Emissão: " + new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date())]]></textFieldExpression>
+					<textFieldExpression><![CDATA["Emissão: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date())]]></textFieldExpression>
 				</textField>
 				<textField>
 					<reportElement style="Column header" x="430" y="3" width="123" height="20" forecolor="#000000" uuid="aaaaaaaa-0005-0005-0005-000000000003"/>
