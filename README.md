@@ -70,7 +70,17 @@ src/main/java/br/gov/gestaosei/gestao_sei_backend/
    docker-compose up --build -d
    ```
 2. **Swagger UI:** [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
-3. **Credenciais Iniciais:** `admin` / `admin123`
+3. **Credenciais iniciais:** `admin` / `admin123`. Altere essa senha imediatamente após o primeiro acesso.
+
+### Configuração para produção
+
+Defina as variáveis `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`,
+`SPRING_DATASOURCE_PASSWORD` e `JWT_SECRET` antes de iniciar a aplicação.
+Não utilize os valores padrão documentados para desenvolvimento em produção.
+
+O projeto usa `spring.jpa.hibernate.ddl-auto=update` por padrão para facilitar o
+desenvolvimento local. Em produção, prefira migrações versionadas e uma política
+de schema controlada.
 
 ## 🚀 Como Executar Localmente
 
@@ -91,7 +101,7 @@ Depois, inicie a aplicação com:
 Se precisar apontar para outro banco, sobrescreva as variáveis `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`.
 
 ## 🧪 Testes
-O projeto conta com **22 testes unitários**.
+O projeto conta com **33 testes automatizados**.
 ```bash
 ./mvnw test
 ```
