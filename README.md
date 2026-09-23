@@ -4,7 +4,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.13-brightgreen?style=flat-square&logo=spring-boot)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue?style=flat-square&logo=docker)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Testes-22%20passing-brightgreen?style=flat-square)](src/test)
+[![Tests](https://img.shields.io/badge/Testes-33%20passing-brightgreen?style=flat-square)](src/test)
 [![License](https://img.shields.io/badge/Licen%C3%A7a-MIT-yellow?style=flat-square)](LICENSE)
 
 > 🚀 Sistema de backend para controle de prazos e tramitação de processos do SEI, desenvolvido especialmente para servidores públicos.
@@ -50,6 +50,11 @@ classDiagram
 
 ### 📈 **Relatórios Gerenciais**
 - Exportação em PDF via **JasperReports** com filtros dinâmicos e formatação PT-BR.
+- Relatórios de processos e usuários com data e horário de emissão.
+
+### 🧾 **Operação e Observabilidade**
+- Logging estruturado para eventos de inicialização, atualização automática de prazos e falhas de exportação.
+- Logs SQL detalhados desativados por padrão para reduzir ruído e exposição de dados em produção.
 
 ## 🏗️ Estrutura de Pastas
 ```text
