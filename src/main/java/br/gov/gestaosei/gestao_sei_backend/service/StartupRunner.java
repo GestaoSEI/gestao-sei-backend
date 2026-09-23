@@ -3,9 +3,13 @@ package br.gov.gestaosei.gestao_sei_backend.service;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class StartupRunner implements ApplicationRunner {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StartupRunner.class);
 
     private final AgendamentoService agendamentoService;
 
@@ -18,7 +22,7 @@ public class StartupRunner implements ApplicationRunner {
         try {
             agendamentoService.verificarProcessosVencidos();
         } catch (RuntimeException e) {
-            System.err.println("Falha ao atualizar status vencidos na inicializacao: " + e.getMessage());
+            LOGGER.error("Falha ao atualizar status vencidos na inicializacao", e);
         }
     }
 }

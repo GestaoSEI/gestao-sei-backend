@@ -6,6 +6,8 @@ import br.gov.gestaosei.gestao_sei_backend.repository.ProcessoRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -13,6 +15,8 @@ import java.util.List;
 
 @Service
 public class AgendamentoService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AgendamentoService.class);
 
     private final ProcessoRepository processoRepository;
 
@@ -41,7 +45,7 @@ public class AgendamentoService {
             if (statusAtualizado != null && !statusAtualizado.equalsIgnoreCase(processo.getStatus())) {
                 processo.setStatus(statusAtualizado);
                 processoRepository.save(processo);
-                System.out.println("Processo " + processo.getNumeroProcesso() + " atualizado para " + statusAtualizado.toUpperCase() + " automaticamente.");
+                LOGGER.info("Processo {} atualizado para {} automaticamente", processo.getNumeroProcesso(), statusAtualizado.toUpperCase());
             }
         }
     }
@@ -52,30 +56,30 @@ public class AgendamentoService {
         }
 
         String statusAtual = normalizarStatus(processo.getStatus());
-        System.out.println("[DEBUG] Processo: " + processo.getNumeroProcesso() + " | Status Atual: " + statusAtual + " | Data Prazo: " + processo.getDataPrazoFinal() + " | Hoje: " + hoje);
+        LOGGER.debug("Processo: {} | Status atual: {} | Data prazo: {} | Hoje: {}", processo.getNumeroProcesso(), statusAtual, processo.getDataPrazoFinal(), hoje);
         
         if (isStatusFinal(statusAtual)) {
-            System.out.println("[DEBUG] Status é final, não recalcula");
+            LOGGER.debug("Status é final, não recalcula");
             return null;
         }
 
         if (!isStatusFluxoPrazo(statusAtual)) {
-            System.out.println("[DEBUG] Status não está no fluxo de prazo");
+            LOGGER.debug("Status não está no fluxo de prazo");
             return null;
         }
 
         if (processo.getDataPrazoFinal().isBefore(hoje)) {
-            System.out.println("[DEBUG] Prazo expirado! Retornando EXPIRADO");
+            LOGGER.debug("Prazo expirado; retornando EXPIRADO");
             return StatusProcesso.EXPIRADO;
         }
 
         long diasParaVencer = ChronoUnit.DAYS.between(hoje, processo.getDataPrazoFinal());
         if (diasParaVencer <= 5) {
-            System.out.println("[DEBUG] Faltam " + diasParaVencer + " dias, retornando PRAZO_PROXIMO");
+            LOGGER.debug("Faltam {} dias; retornando PRAZO_PROXIMO", diasParaVencer);
             return StatusProcesso.PRAZO_PROXIMO;
         }
 
-        System.out.println("[DEBUG] Faltam " + diasParaVencer + " dias, retornando EM_ANDAMENTO");
+        LOGGER.debug("Faltam {} dias; retornando EM_ANDAMENTO", diasParaVencer);
         return StatusProcesso.EM_ANDAMENTO;
     }
 

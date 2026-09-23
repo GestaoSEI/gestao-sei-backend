@@ -7,9 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Configuration
 public class DataInitializer implements CommandLineRunner {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataInitializer.class);
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -28,7 +32,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setDataNascimento(java.time.LocalDate.of(1980, 1, 1));
             
             usuarioRepository.save(admin);
-            System.out.println("Usuário ADMIN padrão verificado/criado.");
+            LOGGER.info("Usuário ADMIN padrão criado");
         }
     }
 }

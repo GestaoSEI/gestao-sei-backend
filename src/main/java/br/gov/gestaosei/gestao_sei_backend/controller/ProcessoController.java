@@ -18,6 +18,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,6 +32,8 @@ import java.util.Locale;
 @RequestMapping("/api/processos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class ProcessoController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProcessoController.class);
 
     private final ProcessoService processoService;
     private final RelatorioService relatorioService;
@@ -178,7 +182,7 @@ public class ProcessoController {
             return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
 
         } catch (JRException | FileNotFoundException e) {
-            e.printStackTrace();
+            LOGGER.error("Falha ao gerar relatório PDF de processos", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -210,7 +214,7 @@ public class ProcessoController {
 
             return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Falha ao exportar processos para CSV", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
