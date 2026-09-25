@@ -73,7 +73,7 @@ No perfil `public`, esse bloqueio não é aplicado.
 O projeto usa PostgreSQL 16. Para subir apenas o banco:
 
 ```bash
-docker-compose up db -d
+docker compose up db -d
 ```
 
 O banco ficará disponível em `localhost:5433` com as configurações:
@@ -90,6 +90,8 @@ O banco ficará disponível em `localhost:5433` com as configurações:
 ./mvnw spring-boot:run
 ```
 
+No Windows PowerShell, use `.\mvnw.cmd spring-boot:run`.
+
 A API estará disponível em `http://localhost:8081`.  
 A documentação Swagger em `http://localhost:8081/swagger-ui.html`.
 
@@ -98,7 +100,7 @@ A documentação Swagger em `http://localhost:8081/swagger-ui.html`.
 Para subir tudo (banco + aplicação) via Docker:
 
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 ---
@@ -109,13 +111,28 @@ docker-compose up --build -d
 ./mvnw test
 ```
 
-O projeto possui **22 testes unitários**. Todos devem passar antes de abrir um PR.
+No Windows PowerShell:
+
+```powershell
+.\mvnw.cmd test
+```
+
+O projeto possui **33 testes automatizados**. Todos devem passar antes de abrir um PR.
 
 Para verificar a cobertura:
 
 ```bash
 ./mvnw verify
 ```
+
+Não inclua dados reais, credenciais, tokens ou arquivos exportados nos testes, commits ou issues.
+
+### Configuração e dados de produção
+
+- Defina `JWT_SECRET` e as credenciais do banco por variáveis de ambiente.
+- Não use a senha administrativa padrão em uma implantação real.
+- Faça backup antes de alterar tabelas, importar dados ou executar scripts de limpeza.
+- Alterações de schema devem ser avaliadas para preservar processos e histórico existentes.
 
 ---
 
